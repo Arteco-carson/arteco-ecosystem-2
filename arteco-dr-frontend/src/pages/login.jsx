@@ -13,7 +13,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
   
-  // Reset Password State
+  // Reset Password States
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetForm] = Form.useForm();
   const [resetLoading, setResetLoading] = useState(false);

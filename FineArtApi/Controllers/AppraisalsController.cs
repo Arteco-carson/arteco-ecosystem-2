@@ -13,7 +13,7 @@ namespace FineArtApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Senior Management Compliance: Ensuring financial privacy
+    [Authorize] // Senior Management Compliance: Ensuring financial privacys
     public class AppraisalsController : ControllerBase
     {
         private readonly ArtContext _context;
