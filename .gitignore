@@ -1,18 +1,31 @@
-# Node
+# --- SECURITY & SECRETS (Critical) ---
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+# Ignore the Gemini CLI config/cache folder to protect your API key
+.gemini/
+
+# --- NODE / JAVASCRIPT ---
 node_modules/
 npm-debug.log*
 yarn-error.log*
+yarn-debug.log*
 dist/
 build/
-.env
+# Vite build timestamp (common in modern React)
+*.timestamp-*
 
-# React
-/.pnp
-.pnp.js
-coverage/
-.DS_Store
+# --- REACT NATIVE / EXPO (Added based on your Tech Stack) ---
+.expo/
+*.jks
+*.keystore
+*.p12
+android/app/debug.keystore
+web-build/
 
-# Visual Studio / .NET
+# --- VISUAL STUDIO / .NET ---
 bin/
 obj/
 *.user
@@ -20,14 +33,17 @@ obj/
 *.userosscache
 *.sln.docstates
 .vs/
+# Ignore all appsettings except the base one (safer for dev/prod secrets)
+appsettings.*.json
+!appsettings.json
 
-# Logs
-*.log
+# --- VS CODE ---
+.vscode/
+*.code-workspace
 
-# OS
+# --- OS & LOGS ---
 Thumbs.db
 *.swp
 ehthumbs.db
-
-# Application settings
-appsettings.Production.json
+.DS_Store
+*.log
