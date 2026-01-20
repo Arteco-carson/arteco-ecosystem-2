@@ -16,6 +16,7 @@ C:.
 ¦   GEMINI.md
 ¦   Login.jsx
 ¦   README.md
+¦   refactor.ps1
 ¦   troubleshooting_guide.md
 ¦   update_defectreports.sql
 ¦   UPDATE_LOG.md
@@ -61,11 +62,13 @@ C:.
 ¦       ¦   api.js.v1
 ¦       ¦   App.css
 ¦       ¦   App.js
+¦       ¦   App.jsx
 ¦       ¦   App.test.js
 ¦       ¦   index.css
 ¦       ¦   index.css.v1
 ¦       ¦   index.js
 ¦       ¦   logo.svg
+¦       ¦   main.jsx
 ¦       ¦   reportWebVitals.js
 ¦       ¦   setupTests.js
 ¦       ¦   
@@ -74,29 +77,45 @@ C:.
 ¦       ¦       
 ¦       +---components
 ¦       ¦       AddAppraisal.js
+¦       ¦       AddAppraisal.jsx
 ¦       ¦       AddArtistModal.js
+¦       ¦       AddArtistModal.jsx
 ¦       ¦       AddArtworkModal.js
+¦       ¦       AddArtworkModal.jsx
 ¦       ¦       api.js
 ¦       ¦       api.js.v1
 ¦       ¦       AppraisalList.js
+¦       ¦       AppraisalList.jsx
 ¦       ¦       ArtistDetails.js
+¦       ¦       ArtistDetails.jsx
 ¦       ¦       ArtistList.js
+¦       ¦       ArtistList.jsx
 ¦       ¦       ArtworkDetails.js
+¦       ¦       ArtworkDetails.jsx
 ¦       ¦       ArtworkList.js
+¦       ¦       ArtworkList.jsx
 ¦       ¦       AuditLogs.js
+¦       ¦       AuditLogs.jsx
 ¦       ¦       AuthContext.jsx
 ¦       ¦       CollectionsList.js
+¦       ¦       CollectionsList.jsx
 ¦       ¦       CreateCollection.js
+¦       ¦       CreateCollection.jsx
 ¦       ¦       Dashboard.jsx
 ¦       ¦       Homepage.css
 ¦       ¦       Homepage.css.v1
 ¦       ¦       Homepage.js
+¦       ¦       Homepage.jsx
 ¦       ¦       Login.js
 ¦       ¦       Login.jsx
 ¦       ¦       MainLayout.js
+¦       ¦       MainLayout.jsx
 ¦       ¦       Navbar.js
+¦       ¦       Navbar.jsx
 ¦       ¦       Profile.js
+¦       ¦       Profile.jsx
 ¦       ¦       Register.js
+¦       ¦       Register.jsx
 ¦       ¦       
 ¦       +---context
 ¦               AuthContext.js
