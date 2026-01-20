@@ -33,3 +33,15 @@ This log tracks automated updates and file modifications performed by the Gemini
 | 2026-01-20 | .github/workflows/azure-static-web-apps-agreeable-sky-071d8f90f.yml | Backup | Created .yml.v1 |
 | 2026-01-20 | .github/workflows/azure-static-web-apps-agreeable-sky-071d8f90f.yml | Update | Updated environment variable (VITE_API_URL) and build output path (dist) |
 | 2026-01-20 | ACTIONS.md | Create | Logged manual actions required for Azure Portal and Testing. |
+
+## Session: Design System & Cloud Prep
+**Date:** 2026-01-20
+**Objective:** Establish Conductor files for Design Tokens (Colours/Fonts) and audit Cloud readiness.
+
+### Change Log
+| Timestamp | File | Action | Description |
+|---|---|---|---|
+| 2026-01-20 | conductor/design_tokens.md | Create | Created Source of Truth for Colour Palette and Typography categories. |
+| 2026-01-20 | ACTIONS.md | Update | Added actions for Localhost Audit and Design Token population. |
+| 2026-01-20 | conductor/design_tokens.md | Refactor | Moved file to conductor/ and added structured tables with placeholders. |
+| 2026-01-20 | conductor/file_ownership.md | Create | Created guide defining ownership of Conductor files (Product vs. Engineering). |

@@ -9,6 +9,8 @@ C:.
 ¦   Azure_Deployment_Guide.md
 ¦   AzuriteConfig
 ¦   Dashboard.jsx
+¦   design_tokens.md
+¦   file_ownership.md
 ¦   file_structure
 ¦   file_structure.txt
 ¦   GEMINI.md
@@ -87,6 +89,7 @@ C:.
 ¦       ¦       CreateCollection.js
 ¦       ¦       Dashboard.jsx
 ¦       ¦       Homepage.css
+¦       ¦       Homepage.css.v1
 ¦       ¦       Homepage.js
 ¦       ¦       Login.js
 ¦       ¦       Login.jsx
@@ -248,6 +251,7 @@ C:.
 +---conductor
 ¦   ¦   index.md
 ¦   ¦   product-guidelines.md
+¦   ¦   product-guidelines.md.v1
 ¦   ¦   product.md
 ¦   ¦   tech-stack.md
 ¦   ¦   tracks.md
