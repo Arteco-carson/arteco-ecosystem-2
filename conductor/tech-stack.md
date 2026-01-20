@@ -2,18 +2,35 @@
 
 This document defines the technical foundation of the Arteco Ecosystem. It serves as a constraint and guide for engineering decisions. **Changes to this stack require architectural review.**
 
-## 📱 Mobile App (`arteco-acm-mobile`)
-*   **Framework**: React Native (via Expo 52)
-*   **Language**: JavaScript/React 18
+## 📱 Mobile Apps
+
+### Art Collection Manager (`arteco-acm-mobile`)
+*   **Framework**: React Native (via Expo 54)
+*   **Language**: JavaScript/React 19
 *   **Navigation**: React Navigation 7
 *   **Storage**: Async Storage, Secure Store
 *   **UI/Icons**: Lucide React Native
 
-## 💻 Web Frontend (`arteco-acm-frontend`)
+### Defect Reporting (`arteco-dr-mobile`)
+*   **Framework**: React Native (via Expo 54)
+*   **Language**: JavaScript/React 19
+*   **Navigation**: React Navigation 7
+*   **Storage**: Async Storage, Secure Store
+*   **UI/Icons**: Lucide React Native
+
+## 💻 Web Frontends
+
+### Art Collection Manager (`arteco-acm-frontend`)
 *   **Framework**: React 19
-*   **UI Library**: Ant Design (antd 5.x)
+*   **Build Tool**: Vite
+*   **UI Library**: Ant Design 6.x
 *   **Icons**: Lucide React
-*   **HTTP Client**: Axios
+*   **Routing**: React Router DOM 7
+
+### Defect Reporting (`arteco-dr-frontend`)
+*   **Framework**: React 19
+*   **Build Tool**: Vite
+*   **UI Library**: Ant Design 6.x
 *   **Routing**: React Router DOM 7
 
 ## ☁️ Backend API (`FineArtApi`)

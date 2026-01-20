@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     env:
-      VITE_API_URL: "https://arteco-fineartapi-prod-bxetekage3a2b6em.eastus2-01.azurewebsites.net"
+      REACT_APP_API_URL: "https://arteco-fineartapi-prod-bxetekage3a2b6em.eastus2-01.azurewebsites.net"
     steps:
       - uses: actions/checkout@v3
         with:
@@ -40,7 +40,7 @@ jobs:
         working-directory: arteco-acm-frontend
         env:
           CI: false
-          VITE_API_URL: ${{ env.VITE_API_URL }}
+          REACT_APP_API_URL: ${{ env.REACT_APP_API_URL }}
 
       - name: Build And Deploy
         id: builddeploy
@@ -49,7 +49,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_SKY_071D8F90F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
-          app_location: "arteco-acm-frontend/dist" # Point to the built artifacts
+          app_location: "arteco-acm-frontend/build" # Point to the built artifacts
           skip_app_build: true # Skip Oryx build since we built it manually above
           output_location: "" # Leave empty when skipping build and pointing app_location to build folder
 
