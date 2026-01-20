@@ -1,0 +1,1 @@
+// PLEASE DELETE: Moved to arteco-acm-frontend/src/components/Homepage.jsx

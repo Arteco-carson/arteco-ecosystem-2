@@ -23,6 +23,7 @@ This document defines the technical foundation of the Arteco Ecosystem. It serve
 ### Art Collection Manager (`arteco-acm-frontend`)
 *   **Framework**: React 19
 *   **Build Tool**: Vite
+*   **File Extension Standard**: `.jsx` for all React components
 *   **UI Library**: Ant Design 6.x
 *   **Icons**: Lucide React
 *   **Routing**: React Router DOM 7
@@ -30,6 +31,7 @@ This document defines the technical foundation of the Arteco Ecosystem. It serve
 ### Defect Reporting (`arteco-dr-frontend`)
 *   **Framework**: React 19
 *   **Build Tool**: Vite
+*   **File Extension Standard**: `.jsx` for all React components
 *   **UI Library**: Ant Design 6.x
 *   **Routing**: React Router DOM 7
 

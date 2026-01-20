@@ -24,3 +24,51 @@ This file tracks tasks that require human intervention or configuration outside 
 ## 4. Populate Design Tokens
 **Context:** A new `conductor/design_tokens.md` file has been created to manage the changing colour palette and fonts.
 **Action:** Fill in the `[INSERT]` placeholders in `conductor/design_tokens.md` using values from `arteco-frontend/src/index.css` (or similar) to establish the baseline.
+
+## 5. File Cleanup (Post-Refactoring)
+**Context:** Following the standardization of `arteco-acm-frontend` to `.jsx` and the cleanup of the root directory, several files are now deprecated, redundant, or effective placeholders.
+**Action:** Delete the following files to maintain repository hygiene.
+
+**Root Directory:**
+*   `Dashboard.jsx` (Deprecated/Duplicate)
+*   `Login.jsx` (Deprecated/Duplicate)
+
+**arteco-acm-frontend (Deprecated .js Components):**
+*   `arteco-acm-frontend/Login.js`
+*   `arteco-acm-frontend/src/components/Login.js`
+*   `arteco-acm-frontend/src/components/Homepage.js`
+*   `arteco-acm-frontend/src/components/MainLayout.js`
+*   `arteco-acm-frontend/src/components/AddAppraisal.js`
+*   `arteco-acm-frontend/src/components/AddArtistModal.js`
+*   `arteco-acm-frontend/src/components/AddArtworkModal.js`
+*   `arteco-acm-frontend/src/components/AppraisalList.js`
+*   `arteco-acm-frontend/src/components/ArtistDetails.js`
+*   `arteco-acm-frontend/src/components/ArtistList.js`
+*   `arteco-acm-frontend/src/components/ArtworkDetails.js`
+*   `arteco-acm-frontend/src/components/ArtworkList.js`
+*   `arteco-acm-frontend/src/components/AuditLogs.js`
+*   `arteco-acm-frontend/src/components/CollectionsList.js`
+*   `arteco-acm-frontend/src/components/CreateCollection.js`
+*   `arteco-acm-frontend/src/components/Navbar.js`
+*   `arteco-acm-frontend/src/components/Profile.js`
+*   `arteco-acm-frontend/src/components/Register.js`
+
+**Review Candidates (Placeholder/Low Content):**
+*   `conductor/product.md` (Currently contains only a generic description line. Verify if this should be populated or removed.)
+*   `conductor/workflow.md` (Effective placeholder.)
+*   `conductor/tracks.md` (Empty registry.)
+
+**Backup & Temporary Files (To Remove):**
+*   `arteco-acm-frontend/package.json.v1`
+*   `arteco-acm-frontend/public/index.html.bak`
+*   `arteco-acm-frontend/src/api.js.v1`
+*   `arteco-acm-frontend/src/index.css.v1`
+*   `conductor/product-guidelines.md.v1`
+*   `.github/workflows/azure-static-web-apps-agreeable-sky-071d8f90f.yml.v1`
+*   `file_structure.txt` (Root)
+*   `FineArtApi/file_structure.txt`
+
+**Legacy CRA Files (Unused in Vite):**
+*   `arteco-acm-frontend/src/reportWebVitals.js`
+*   `arteco-acm-frontend/src/setupTests.js`
+*   `arteco-acm-frontend/src/App.test.js`
