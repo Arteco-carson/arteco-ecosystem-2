@@ -15,7 +15,7 @@ This file tracks tasks that require human intervention or configuration outside 
 
 ## 3. Audit Codebase for Hardcoded Localhost (Critical for Cloud)
 **Context:** The user noted potential changes involving `localhost`. While `localhost` is valid for development, it breaks Cloud deployments if hardcoded.
-**Status:** Pending Audit.
+**Status:** Audit Complete. Hardcoded 'localhost' found in 'arteco-dr-mobile/src/config/env.js', 'arteco-dr-frontend/src/services/api.js', 'arteco-acm-frontend/src/api.js' and 'arteco-acm-frontend/src/components/api.js'.
 **Action:** Search the entire codebase (especially `api.js`, `fetch` calls, and CORS settings) for `localhost` or `127.0.0.1`.
     *   **Frontend:** Ensure all API calls use `import.meta.env.VITE_API_URL`.
     *   **Mobile:** Ensure all API calls use `process.env.API_URL` (via `react-native-dotenv`).
@@ -26,6 +26,7 @@ This file tracks tasks that require human intervention or configuration outside 
 **Action:** Fill in the `[INSERT]` placeholders in `conductor/design_tokens.md` using values from `arteco-frontend/src/index.css` (or similar) to establish the baseline.
 
 ## 5. File Cleanup (Post-Refactoring)
+**Status:** Pending Manual Deletion (Agent unable to delete files).
 **Context:** Following the standardization of `arteco-acm-frontend` to `.jsx` and the cleanup of the root directory, several files are now deprecated, redundant, or effective placeholders.
 **Action:** Delete the following files to maintain repository hygiene.
 

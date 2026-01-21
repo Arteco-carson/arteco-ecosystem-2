@@ -4,6 +4,13 @@ This document defines the technical foundation of the Arteco Ecosystem. It serve
 
 ## 📱 Mobile Apps
 
+### Directory Structure Standard
+*   **Components**: `src/components/` (Reusable UI elements)
+*   **Contexts**: `src/context/` (Global state)
+*   **Screens**: `src/screens/` (App screens)
+*   **Services**: `src/services/` (API calls, utilities)
+*   **Config**: `src/config/` (Configuration, environment variables)
+
 ### Art Collection Manager (`arteco-acm-mobile`)
 *   **Framework**: React Native (via Expo 54)
 *   **Language**: JavaScript/React 19
@@ -19,6 +26,13 @@ This document defines the technical foundation of the Arteco Ecosystem. It serve
 *   **UI/Icons**: Lucide React Native
 
 ## 💻 Web Frontends
+
+### Directory Structure Standard
+*   **Components**: `src/components/` (Reusable UI elements)
+*   **Contexts**: `src/context/` (Global state, e.g., `AuthContext`)
+*   **Pages**: `src/pages/` (Web)
+*   **Services**: `src/services/` (API calls, utilities)
+*   **Assets**: `src/assets/` (Images, fonts)
 
 ### Art Collection Manager (`arteco-acm-frontend`)
 *   **Framework**: React 19
