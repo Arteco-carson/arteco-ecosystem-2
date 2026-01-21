@@ -49,11 +49,17 @@ builder.Services.AddAuthentication(options => {
 });
 
 var frontendUrl = builder.Configuration["FrontendUrl"];
-if (string.IsNullOrEmpty(frontendUrl))
+var allowedOrigins = new List<string>
 {
-    frontendUrl = "https://agreeable-sky-071d8f90f.2.azurestaticapps.net";
+    "https://agreeable-sky-071d8f90f.2.azurestaticapps.net",
+    "https://calm-bay-0e5fc840f.6.azurestaticapps.net"
+};
+
+if (!string.IsNullOrEmpty(frontendUrl))
+{
+    allowedOrigins.Add(frontendUrl);
 }
-Console.WriteLine($"[Startup] CORS Configured for FrontendUrl: {frontendUrl}");
+Console.WriteLine($"[Startup] CORS Configured for origins: {string.Join(", ", allowedOrigins)}");
 
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowSpecificOrigin",
@@ -75,7 +81,7 @@ builder.Services.AddCors(options => {
                 policy.SetIsOriginAllowed(origin =>
                 {
                     // Allow the web frontend
-                    if (!string.IsNullOrEmpty(origin) && origin.Equals(frontendUrl, StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrEmpty(origin) && allowedOrigins.Any(o => o.Equals(origin, StringComparison.OrdinalIgnoreCase)))
                     {
                         return true;
                     }
