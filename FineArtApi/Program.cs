@@ -95,11 +95,12 @@ builder.Services.AddCors(options => {
                     return false;
                 })
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod()
+                .AllowCredentials();
             }
         });
 });
-
+//updates
 builder.Services.AddControllers().AddJsonOptions(options => {
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; 
 });
