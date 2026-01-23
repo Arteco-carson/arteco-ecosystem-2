@@ -4,3 +4,4 @@ This file is a registry of all development tracks. Each track represents a unit 
 
 | Track ID | Description | Status |
 |---|---|---|
+| feature-hover-description | Hover-over description of frontpage buttons | Completed |

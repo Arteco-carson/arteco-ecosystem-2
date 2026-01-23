@@ -1,63 +1,77 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  FolderOutlined, 
-  PictureOutlined, 
-  UserOutlined, 
-  FileProtectOutlined
-} from '@ant-design/icons';
+  Library, 
+  Image, 
+  Users, 
+  ShieldCheck 
+} from 'lucide-react';
+import FeatureDescription from './FeatureDescription.jsx';
 import './Homepage.css';
 
 const Homepage = () => {
   const navigate = useNavigate();
+  const [hoveredFeatureId, setHoveredFeatureId] = useState(null);
 
   const menuOptions = [
     {
+      id: 'collections',
       title: 'Collections',
-      icon: <FolderOutlined />,
+      icon: <Library size={48} />,
       path: '/collections',
-      description: 'Manage your private galleries.'
+      description: 'Organize and manage your private art galleries and exhibitions.'
     },
     {
+      id: 'artwork',
       title: 'Artwork',
-      icon: <PictureOutlined />,
+      icon: <Image size={48} />,
       path: '/artworks',
-      description: 'View and edit your artworks.'
+      description: 'Comprehensive database of your art pieces, including metadata and history.'
     },
     {
+      id: 'artists',
       title: 'Artists',
-      icon: <UserOutlined />,
+      icon: <Users size={48} />,
       path: '/artists',
-      description: 'Maintain biographical records and information.'
+      description: 'Detailed biographical records and association history for artists in your collection.'
     },
     {
+      id: 'appraisals',
       title: 'Appraisals',
-      icon: <FileProtectOutlined />,
+      icon: <ShieldCheck size={48} />,
       path: '/appraisals',
-      description: 'Review valuations and insurance records.'
+      description: 'Track professional valuations, condition reports, and insurance documentation.'
     }
   ];
+
+  const activeDescription = menuOptions.find(opt => opt.id === hoveredFeatureId)?.description || '';
 
   return (
     <div className="dashboard-content">
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ margin: 0, color: '#1e293b', fontSize: '1.875rem' }}>Arteco Collection Management</h1>
-        <p style={{ color: '#64748b', marginTop: '8px' }}>Select a module to manage your collections.</p>
+        <h1 style={{ margin: 0, color: '#1e293b', fontSize: '2.25rem', fontWeight: 700 }}>Arteco Collection Management</h1>
+        <p style={{ color: '#64748b', marginTop: '12px', fontSize: '1.125rem' }}>Select a module to manage your collections.</p>
       </div>
       
       <div className="options-grid">
         {menuOptions.map((option) => (
           <div 
-            key={option.title} 
+            key={option.id} 
             className="option-card" 
             onClick={() => navigate(option.path)}
+            onMouseEnter={() => setHoveredFeatureId(option.id)}
+            onMouseLeave={() => setHoveredFeatureId(null)}
           >
-            <div className="option-icon">{option.icon}</div>
-            <h2>{option.title}</h2>
-            <p>{option.description}</p>
+            <div className="option-icon" style={{ color: '#246A73' }}>{option.icon}</div>
+            <h2 style={{ color: '#1e293b' }}>{option.title}</h2>
           </div>
         ))}
       </div>
+
+      <FeatureDescription 
+        description={activeDescription} 
+        isVisible={!!hoveredFeatureId} 
+      />
     </div>
   );
 };

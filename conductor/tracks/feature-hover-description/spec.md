@@ -9,13 +9,13 @@ Fill screen space and guide the user by displaying dynamic descriptions of featu
 In order to give more context to a user, and make the screen feel fuller, when a button is hovered over, give a description below the buttons of what that feature does. Span the width of the buttons and make it feel impressive.
 
 ## Requirements
-- [ ] **Trigger:** Activate description display on `mouseenter`; clear on `mouseleave`.
-- [ ] **Content:** Manage descriptions in a centralized config (clean code).
-- [ ] **UI/UX:**
+- [x] **Trigger:** Activate description display on `mouseenter`; clear on `mouseleave`.
+- [x] **Content:** Manage descriptions in a centralized config (clean code).
+- [x] **UI/UX:**
     - Use **Ant Design 6.x** components (Typography, Card/Grid).
     - Use `Primary` color (`#246A73`) for active state or `Secondary` text color (`#64748b`) for the description text.
     - Animation should feel smooth (fade in/out).
-- [ ] **Mobile:** This feature must be **hidden** on mobile devices (use Ant Design responsive breakpoints).
+- [x] **Mobile:** This feature must be **hidden** on mobile devices (use Ant Design responsive breakpoints).
 
 ## Tech Constraints
 - Framework: React 19 + Vite

@@ -12,3 +12,11 @@
 - **Bug Fix (CORS)**: Updated `FineArtApi/Program.cs` to resolve CORS errors for the Defect Reporting Portal.
     - Added `https://calm-bay-0e5fc840f.6.azurestaticapps.net` to the allowed origins list.
     - Enabled `.AllowCredentials()` in the CORS policy to support authentication cookies (ARRAffinity).
+
+## 2026-01-23
+- **Feature (ACM Frontend)**: Implemented hover-over descriptions for the main dashboard buttons in `arteco-acm-frontend`.
+    - Created `FeatureDescription.jsx` component with Ant Design Typography and Grid responsiveness.
+    - Replaced Ant Design icons with Lucide React icons in `Homepage.jsx`.
+    - Added smooth fade-in animations for descriptions.
+    - Ensured descriptions are hidden on mobile devices (xs, sm breakpoints).
+    - Centralized menu configuration with `id` and `description` fields.
