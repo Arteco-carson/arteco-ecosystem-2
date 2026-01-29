@@ -34,6 +34,12 @@ This document defines the technical foundation of the Arteco Ecosystem. It serve
 *   **Services**: `src/services/` (API calls, utilities)
 *   **Assets**: `src/assets/` (Images, fonts)
 
+### Unified Portal (`arteco-portal`)
+* **Role**: The new entry point for the ecosystem. Wraps other modules.
+* **Framework**: React 19 + Vite
+* **UI Library**: Ant Design 6.x
+* **Key Feature**: "Smart Input" component (Mocked AI classification for MVP).
+
 ### Art Collection Manager (`arteco-acm-frontend`)
 *   **Framework**: React 19
 *   **Build Tool**: Vite

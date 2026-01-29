@@ -2,35 +2,25 @@
 
 This document provides guidelines for product development, including UI/UX principles, accessibility standards, and content style guides.
 
-## Design System: Color Palette
+**Note:** For visual definitions (Colors, Fonts, Shapes), please refer to the **[Design System](./design-system.md)**.
 
-The application uses a semantic color system. Updates to these values should be reflected in the project's CSS variables (Web) and Theme Configuration (Mobile).
+## 🧭 Experience Principles
 
-### Brand Colors
-Primary brand identity colors used for headers, primary actions, and branding.
+### 1. Intent-First Navigation
+* **Don't make me hunt.** The user should be able to state their goal (e.g., "Report Damage") rather than navigating complex menus.
+* **Context is King.** If a user is looking at an Artwork, relevant actions (Appraise, Move, Report) should be immediately visible.
 
-| Category | Semantic Name | Hex Value | Usage |
-| :--- | :--- | :--- | :--- |
-| **Brand** | `Primary` | `#246A73` | Main headers, primary buttons, active tabs, brand icons. |
-| **Brand** | `Secondary` | `#007AFF` | Interactive links, secondary highlights. |
+### 2. Tone of Voice
+* **Professional but Approachable.** We deal with high-value assets, so trust is paramount. Avoid slang, but do not be overly robotic.
+* **Clear & Direct.** Error messages should explain *what* went wrong and *how* to fix it. Avoid generic "System Error" messages.
 
-### Feedback & Status
-Colors used to communicate state to the user.
+### 3. Accessibility (A11y)
+* **Color Contrast:** Always ensure text meets WCAG AA standards against background colors.
+* **Screen Readers:** All functional images (icons) must have `aria-label` or `alt` text. Decorative images should be hidden from screen readers.
+* **Keyboard Nav:** All interactive elements must be reachable via the `Tab` key.
 
-| Category | Semantic Name | Hex Value | Usage |
-| :--- | :--- | :--- | :--- |
-| **Feedback** | `Success` | `#059669` | Success messages, completion indicators (Green). |
-| **Feedback** | `Error` | `#ef4444` | Error messages, destructive actions, alerts (Red). |
-| **Feedback** | `Warning` | `#FFA800` | Warnings, attention needed (Amber). |
+## 🚦 Interaction Guardrails
 
-### Neutrals & Surfaces
-Backgrounds, borders, and text colors.
-
-| Category | Semantic Name | Hex Value | Usage |
-| :--- | :--- | :--- | :--- |
-| **Surface** | `Page Background` | `#f0f2f5` | Main application background (Light Grey/Slate). |
-| **Surface** | `Card Background` | `#ffffff` | Cards, modals, panels (White). |
-| **Border** | `Divider` | `#cbd5e1` | Borders, dividers, input outlines. |
-| **Text** | `Primary` | `#1e293b` | Main headings, body text (Dark Slate). |
-| **Text** | `Secondary` | `#64748b` | Subtitles, meta-data, descriptions (Medium Slate). |
-| **Text** | `Placeholder` | `#94a3b8` | Placeholders, inactive icons. |
+* **Destructive Actions:** Any action that deletes data (e.g., removing an artwork) must require a confirmation modal.
+* **Loading States:** Never show a blank screen. Use skeleton loaders or spinners to indicate activity for any request taking >500ms.
+* **Feedback:** Always provide immediate visual feedback on button clicks (e.g., button state change, toast notification).
