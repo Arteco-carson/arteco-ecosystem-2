@@ -6,7 +6,7 @@ const ARTECO_TEAL = '#246A73';
 
 const { Header, Content } = Layout;
 
-const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [] }) => {
+const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], fullWidth = false }) => {
   return (
     <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
       <Header
@@ -39,8 +39,11 @@ const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [] }) => {
           </span>
         </div>
 
-        {/* Center-Left: Navigation Slot */}
-        <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '8px' }}>
+        {/* Center: Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Right: Navigation Slot */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '24px' }}>
           {navItems.map((item) => (
             <Button
               key={item.key}
@@ -67,9 +70,9 @@ const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [] }) => {
       <Content
         style={{
           width: '100%',
-          maxWidth: '1200px',
+          maxWidth: fullWidth ? '100%' : '1200px',
           margin: '0 auto',
-          padding: '24px',
+          padding: fullWidth ? '24px 40px' : '24px',
           background: '#f0f2f5', // Background Token
         }}
       >

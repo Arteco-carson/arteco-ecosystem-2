@@ -18,6 +18,7 @@ const MainLayout = ({ children }) => {
     <ArtecoShell 
       title="Collection Manager" 
       navItems={navItems}
+      fullWidth={true}
     >
       {children}
     </ArtecoShell>
