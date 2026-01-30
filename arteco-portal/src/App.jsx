@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Typography, Card, Alert } from 'antd';
+import { AppstoreOutlined } from '@ant-design/icons';
 import { SharedTest } from '@arteco/shared';
 import MainLayout from './components/layout/MainLayout';
 import OmniBox from './components/OmniBox';
@@ -50,13 +51,19 @@ function App() {
                            </div>
                        </Card>
                     ) : (
-                       <Alert
-                          message={<span style={{ fontSize: '18px', fontWeight: 500 }}>Dashboard Ready</span>}
-                          description={<span style={{ fontSize: '16px' }}>Use the Concierge Omni-box above to start a task, or select a module from the menu.</span>}
-                          type="info"
-                          showIcon
-                          style={{ marginBottom: 20, padding: '24px' }}
-                       />
+                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                            <Card
+                                hoverable
+                                onClick={() => window.location.href = '/acm/'}
+                                style={{ borderColor: '#e2e8f0' }}
+                            >
+                                <Card.Meta
+                                    avatar={<AppstoreOutlined style={{ fontSize: '32px', color: '#246A73' }} />}
+                                    title={<span style={{ fontSize: '20px', fontWeight: 600 }}>Collection Manager</span>}
+                                    description={<span style={{ fontSize: '16px' }}>Manage artworks, artists, and valuations.</span>}
+                                />
+                            </Card>
+                       </div>
                     )}
 
                     <IndustryNews />

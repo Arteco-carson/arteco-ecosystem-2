@@ -85,3 +85,18 @@ To ensure consistency across apps, all Frontends must use Ant Design's `ConfigPr
 * **fontFamily**: Matches the stack defined above.
 
 **Agent Instruction:** When creating new UIs, always create a `src/config/theme.js` file that exports this object and wrap the root App component in `<ConfigProvider theme={theme}>`.
+
+## 🗺️ Ecosystem Routing & Navigation Strategy
+
+To provide a unified user experience, the ecosystem is deployed as a single composite application. The **Portal** acts as the "Shell Host," and specific capabilities are mounted as sub-paths.
+
+### URL Structure
+| Module | Role | URL Pattern | Implementation Note |
+| :--- | :--- | :--- | :--- |
+| **Arteco Portal** | **Host & Dashboard** | `https://app.arteco.com/` | Serves the root `/`. Handles global auth and routing. |
+| **Collection Manager** | **Sub-Module** | `.../acm/*` | Must be built with `base: '/acm/'`. |
+| **Directory** | **Sub-Module** | `.../directory/*` | (Future) Shared contact database. |
+
+### Navigation Patterns
+1.  **Dashboard Tiles:** The primary way to enter a module is via the Portal's "Module Grid".
+    *
