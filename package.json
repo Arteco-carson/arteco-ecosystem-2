@@ -1,6 +1,9 @@
 {
   "name": "arteco-ecosystem",
   "private": true,
+  "scripts": {
+    "build:ecosystem": "node scripts/build-ecosystem.js"
+  },
   "workspaces": [
     "arteco-portal",
     "arteco-acm-frontend",
