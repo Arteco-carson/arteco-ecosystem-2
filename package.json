@@ -2,11 +2,15 @@
   "name": "arteco-ecosystem",
   "private": true,
   "scripts": {
+    "dev": "npm run dev --workspace=arteco-portal",
+    "dev:acm": "npm run dev --workspace=arteco-acm-frontend",
+    "build": "npm run build --workspaces",
     "build:ecosystem": "node scripts/build-ecosystem.js"
   },
   "workspaces": [
     "arteco-portal",
     "arteco-acm-frontend",
+    "arteco-dr-frontend",
     "packages/*"
   ]
 }

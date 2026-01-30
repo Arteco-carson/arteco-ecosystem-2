@@ -2,67 +2,74 @@
 
 This document defines the technical foundation of the Arteco Ecosystem. It serves as a constraint and guide for engineering decisions. **Changes to this stack require architectural review.**
 
-## 📱 Mobile Apps
+## 🏗️ Core Architecture (The Monorepo)
+All **Web** applications now live in a unified NPM Workspace structure.
 
-### Directory Structure Standard
-*   **Components**: `src/components/` (Reusable UI elements)
-*   **Contexts**: `src/context/` (Global state)
-*   **Screens**: `src/screens/` (App screens)
-*   **Services**: `src/services/` (API calls, utilities)
-*   **Config**: `src/config/` (Configuration, environment variables)
+### Workspace Map
+* **Root**: `.` (Manages `package.json`, generic build scripts)
+* **Shared Lib**: `packages/arteco-shared` (The `@arteco/shared` library)
+* **Portal**: `arteco-portal` (The Host/Shell)
+* **ACM Web**: `arteco-acm-frontend` (Collection Manager Module)
+* **DR Web**: `arteco-dr-frontend` (Defect Reporting Module)
 
-### Art Collection Manager (`arteco-acm-mobile`)
-*   **Framework**: React Native (via Expo 54)
-*   **Language**: JavaScript/React 19
-*   **Navigation**: React Navigation 7
-*   **Storage**: Async Storage, Secure Store
-*   **UI/Icons**: Lucide React Native
+## 📦 Shared Libraries (`@arteco/shared`)
+**Constraint:** All Web Modules MUST import core logic from here. Do not duplicate.
+* **Auth**: `AuthProvider`, `useAuth` (Manages `localStorage` token)
+* **UI Layout**: `ArtecoShell` (The standard Blue Sidebar & Header)
+* **Components**: `LoginModal` (The standard Auth pop-up)
+* **Network**: `api` (Pre-configured Axios instance with Authorization headers)
 
-### Defect Reporting (`arteco-dr-mobile`)
-*   **Framework**: React Native (via Expo 54)
-*   **Language**: JavaScript/React 19
-*   **Navigation**: React Navigation 7
-*   **Storage**: Async Storage, Secure Store
-*   **UI/Icons**: Lucide React Native
+---
 
 ## 💻 Web Frontends
 
 ### Directory Structure Standard
-*   **Components**: `src/components/` (Reusable UI elements)
-*   **Contexts**: `src/context/` (Global state, e.g., `AuthContext`)
-*   **Pages**: `src/pages/` (Web)
-*   **Services**: `src/services/` (API calls, utilities)
-*   **Assets**: `src/assets/` (Images, fonts)
+* **Components**: `src/components/`
+* **Contexts**: `src/context/` (App-specific state only. Use Shared for Auth.)
+* **Pages**: `src/pages/`
+* **Services**: `src/services/` (App-specific API calls)
 
 ### Unified Portal (`arteco-portal`)
-* **Role**: The new entry point for the ecosystem. Wraps other modules.
-* **Framework**: React 19 + Vite
-* **UI Library**: Ant Design 6.x
-* **Key Feature**: "Smart Input" component (Mocked AI classification for MVP).
+* **Role**: Entry Point. Hosts the Public Landing Page and wraps Sub-Modules.
+* **Framework**: React 19 + Vite + Ant Design 6.
+* **Port**: `5173` (Default Dev)
 
 ### Art Collection Manager (`arteco-acm-frontend`)
-*   **Framework**: React 19
-*   **Build Tool**: Vite
-*   **File Extension Standard**: `.jsx` for all React components
-*   **UI Library**: Ant Design 6.x
-*   **Icons**: Lucide React
-*   **Routing**: React Router DOM 7
+* **Role**: Domain Module.
+* **Constraint**: Must be wrapped in `<ArtecoShell>` when running in Dev.
+* **Port**: `5174` (Default Dev)
 
 ### Defect Reporting (`arteco-dr-frontend`)
-*   **Framework**: React 19
-*   **Build Tool**: Vite
-*   **File Extension Standard**: `.jsx` for all React components
-*   **UI Library**: Ant Design 6.x
-*   **Routing**: React Router DOM 7
+* **Role**: Domain Module.
+* **Port**: `5175` (Default Dev)
+
+---
+
+## 📱 Mobile Apps
+*Note: Mobile apps currently live outside the NPM Workspaces link but share the Backend.*
+
+### Directory Structure Standard
+* **Components**: `src/components/`
+* **Contexts**: `src/context/`
+* **Screens**: `src/screens/`
+* **Services**: `src/services/`
+* **Config**: `src/config/`
+
+### Art Collection Manager (`arteco-acm-mobile`)
+* **Framework**: React Native (via Expo 54)
+* **Language**: JavaScript/React 19
+* **Navigation**: React Navigation 7
+* **Storage**: Async Storage, Secure Store
+* **UI/Icons**: Lucide React Native
+
+### Defect Reporting (`arteco-dr-mobile`)
+* **Framework**: React Native (via Expo 54)
+* **Navigation**: React Navigation 7
+
+---
 
 ## ☁️ Backend API (`FineArtApi`)
-*   **Framework**: .NET 8 Web API
-*   **Database ORM**: Entity Framework Core 8 (SQL Server)
-*   **Storage**: Azure Storage Blobs
-*   **Authentication**: JWT Bearer Tokens
-*   **Documentation**: Swagger / Swashbuckle
-
-## 🛠️ Infrastructure & Tools
-*   **Hosting**: Azure Static Web Apps (Frontends)
-*   **CI/CD**: GitHub Actions (Workflows in `.github/workflows`)
-*   **Version Control**: Git
+* **Framework**: .NET 8 Web API
+* **Database**: SQL Server (Entity Framework Core 8)
+* **Auth**: JWT Bearer Tokens (Shared Secret)
+* **Storage**: Azure Storage Blobs

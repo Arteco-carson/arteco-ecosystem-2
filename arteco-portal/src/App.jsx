@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Typography, Card, Alert } from 'antd';
+import { ConfigProvider, Typography, Card, Button } from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
-import { SharedTest } from '@arteco/shared';
+// We import the new Auth tools + your SharedTest
+import { SharedTest, AuthProvider, useAuth, LoginModal } from '@arteco/shared';
 import MainLayout from './components/layout/MainLayout';
 import OmniBox from './components/OmniBox';
 import IndustryNews from './components/IndustryNews';
@@ -10,7 +11,43 @@ import './App.css';
 
 const { Title, Text } = Typography;
 
-function App() {
+// --- 1. THE INTRO WEBSITE (Visible when NOT logged in) ---
+const PublicWebsite = () => {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  
+  return (
+    <div style={{ 
+      height: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)',
+      color: 'white'
+    }}>
+      <Title level={1} style={{ color: 'white', marginBottom: 0 }}>
+        ARTECO
+      </Title>
+      <Text style={{ color: '#888', marginBottom: 40, fontSize: '18px' }}>
+        Unified Fine Art Ecosystem
+      </Text>
+      
+      <Button type="primary" size="large" onClick={() => setIsLoginOpen(true)}>
+        Enter Ecosystem
+      </Button>
+
+      {/* The Center Screen Pop-up */}
+      <LoginModal 
+        open={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
+      />
+    </div>
+  );
+};
+
+// --- 2. THE PRIVATE DASHBOARD (Visible when Logged In) ---
+// This contains the exact UI code you sent me
+const PrivateDashboard = () => {
   const [omniboxResult, setOmniboxResult] = useState(null);
 
   useEffect(() => {
@@ -38,7 +75,7 @@ function App() {
             </div>
 
             <div style={{ width: '100%', maxWidth: 900, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                 <div style={{ width: '100%' }}>
+                  <div style={{ width: '100%' }}>
                     
                     {omniboxResult ? (
                        <Card 
@@ -67,11 +104,28 @@ function App() {
                     )}
 
                     <IndustryNews />
-                 </div>
+                  </div>
             </div>
           </div>
       </MainLayout>
     </ConfigProvider>
+  );
+};
+
+// --- 3. THE GATEKEEPER ---
+const AppContent = () => {
+  const { isAuthenticated } = useAuth();
+  
+  // The switch happens here!
+  return isAuthenticated ? <PrivateDashboard /> : <PublicWebsite />;
+};
+
+// --- 4. ROOT APP ---
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
