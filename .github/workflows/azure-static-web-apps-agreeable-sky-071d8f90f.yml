@@ -45,6 +45,9 @@ jobs:
 
       - name: Install and Build Ecosystem
         run: |
+          # Force a fresh install to get Linux binaries (fixes Rollup error)
+          rm -f package-lock.json
+          rm -rf node_modules
           npm install
           npm run build:ecosystem
         working-directory: . # Run in the root of the repo
