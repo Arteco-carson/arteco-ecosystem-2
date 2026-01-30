@@ -33,6 +33,30 @@ This document is the **Single Source of Truth** for the visual appearance of the
 | **Border Radius** | `6px` | Soft but professional. Not "bubbly". |
 | **Shadows** | `0 2px 8px rgba(0,0,0,0.15)` | Subtle lift. No harsh drop shadows. |
 
+## 🏗️ Layout & Chrome (The Shell)
+
+To ensure a unified experience across the Portal and Sub-modules (ACM, Directory), the Application Shell must follow this structure.
+
+* **Sidebar (`Sider`):**
+    * **Theme:** `light` (matches `Surface` token).
+    * **Behavior:** Collapsible (User controlled).
+    * **Width:** Default `200px` / Collapsed `80px`.
+    * **Logo Area:** Height `32px`, Margin `16px`.
+* **Header:**
+    * **Height:** `64px`.
+    * **Background:** `Surface` token (`#ffffff`).
+    * **Padding:** `0`.
+    * **Elements:**
+        1.  Collapse Trigger (Left).
+        2.  **Contextual Title / Search** (Center). *Note: The Portal Landing places the Omni-Box in the page body.*
+        3.  User Profile/Actions (Right).
+* **Main Content:**
+    * **Outer Margin:** `24px 16px` (Vertical/Horizontal gutter).
+    * **Container:**
+        * Background: `Surface` (`#ffffff`).
+        * Padding: `24px`.
+        * Radius: Matches `Border Radius` token.
+
 ## 👨‍💻 Engineering Implementation: The Theme Config
 
 To ensure consistency across apps, all Frontends must use Ant Design's `ConfigProvider` with the following token mapping:

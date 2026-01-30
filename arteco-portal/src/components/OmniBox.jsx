@@ -31,9 +31,16 @@ const OmniBox = ({ onResult }) => {
         size="large"
         onSearch={handleSearch}
         loading={loading}
-        prefix={<SearchOutlined />}
+        prefix={<SearchOutlined style={{ fontSize: '20px', color: '#bfbfbf' }} />}
         allowClear
+        style={{ height: '50px' }}
+        inputProps={{ style: { fontSize: '18px', height: '50px' } }}
       />
+      <style>{`
+        .ant-input-search-button { height: 50px !important; font-size: 18px !important; padding: 0 30px !important; }
+        .ant-input-affix-wrapper-lg { height: 50px !important; padding-left: 15px !important; }
+        .ant-input-lg { font-size: 18px !important; }
+      `}</style>
     </div>
   );
 };

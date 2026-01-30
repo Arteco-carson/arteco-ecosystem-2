@@ -6,7 +6,10 @@ Create a visual "Shell" application that acts as the new landing page.
 ## 🛠️ Feature Requirements
 
 ### 1. The Layout (Shell)
-* **Hero Section**: Centered "Omni-box" (The AI Input). Placeholder: "Ask Arteco..."
+* **Hero Section**: Centered "Omni-box" (The AI Input).
+    * **Style**: Search Engine aesthetic. The input is the visual focus (large, centered).
+    * **Typography**: Increased font sizes for Welcome message and Results to ensure readability and focus.
+    * **Placeholder**: "Ask Arteco..."
 * **Navigation**: Minimal header. Logo (Left), Profile/Sign In (Right).
 
 ### 2. The Logic (Mocked AI)

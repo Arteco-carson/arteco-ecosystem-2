@@ -25,18 +25,21 @@ const data = [
 ];
 
 const IndustryNews = () => (
-  <div style={{ marginTop: 40, width: '100%', maxWidth: 800 }}>
-    <Typography.Title level={4} style={{ textAlign: 'left' }}>Industry News</Typography.Title>
+  <div style={{ marginTop: 40, width: '100%' }}>
+    <Typography.Title level={3} style={{ textAlign: 'left', fontSize: '24px' }}>Industry News</Typography.Title>
     <List
       grid={{ gutter: 16, column: 2 }}
       dataSource={data}
       renderItem={(item) => (
         <List.Item>
-          <Card title={item.title} size="small">
+          <Card 
+            title={<span style={{ fontSize: '18px' }}>{item.title}</span>} 
+            size="small"
+          >
              <div style={{ marginBottom: 10 }}>
-                <Tag color="blue">{item.tag}</Tag>
+                <Tag color="blue" style={{ fontSize: '14px', padding: '2px 8px' }}>{item.tag}</Tag>
              </div>
-             {item.description}
+             <Typography.Text style={{ fontSize: '16px' }}>{item.description}</Typography.Text>
           </Card>
         </List.Item>
       )}
