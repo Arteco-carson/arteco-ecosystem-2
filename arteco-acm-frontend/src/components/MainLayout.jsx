@@ -1,24 +1,26 @@
 import React from 'react';
-import Navbar from './Navbar';
+import { useNavigate } from 'react-router-dom';
+import { ArtecoShell } from '@arteco/shared';
 
 const MainLayout = ({ children }) => {
+  const navigate = useNavigate();
+
+  const navItems = [
+    { label: 'Home', key: 'home', path: '/home', onClick: () => navigate('/home') },
+    { label: 'Collections', key: 'collections', path: '/collections', onClick: () => navigate('/collections') },
+    { label: 'Artworks', key: 'artworks', path: '/artworks', onClick: () => navigate('/artworks') },
+    { label: 'Artists', key: 'artists', path: '/artists', onClick: () => navigate('/artists') },
+    { label: 'Appraisals', key: 'appraisals', path: '/appraisals', onClick: () => navigate('/appraisals') },
+    { label: 'Profile', key: 'profile', path: '/profile', onClick: () => navigate('/profile') },
+  ];
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* The Navbar is now the fixed header of this layout */}
-      <Navbar />
-      
-      {/* The main content area where your pages will render */}
-      <main style={{ 
-        flex: 1, 
-        padding: '40px 20px', 
-        backgroundColor: '#f8fafc', // Light grey professional background
-        overflowY: 'auto' 
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          {children}
-        </div>
-      </main>
-    </div>
+    <ArtecoShell 
+      title="Collection Manager" 
+      navItems={navItems}
+    >
+      {children}
+    </ArtecoShell>
   );
 };
 

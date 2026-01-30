@@ -1,12 +1,12 @@
 import React from 'react';
-import { Layout, Avatar } from 'antd';
+import { Layout, Avatar, Button } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 // import { ARTECO_TEAL } from '../index'; // Avoiding circular dependency by using literal or defining here
 const ARTECO_TEAL = '#246A73';
 
 const { Header, Content } = Layout;
 
-const ArtecoShell = ({ children, onOmniBoxResult }) => {
+const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [] }) => {
   return (
     <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
       <Header
@@ -21,6 +21,7 @@ const ArtecoShell = ({ children, onOmniBoxResult }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: '24px',
         }}
       >
         {/* Left: Brand Text */}
@@ -34,12 +35,24 @@ const ArtecoShell = ({ children, onOmniBoxResult }) => {
               whiteSpace: 'nowrap',
             }}
           >
-            Arteco Portal
+            {title}
           </span>
         </div>
 
-        {/* Center: Spacer */}
-        <div style={{ flex: 1 }} />
+        {/* Center-Left: Navigation Slot */}
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '8px' }}>
+          {navItems.map((item) => (
+            <Button
+              key={item.key}
+              type="text"
+              style={{ color: 'rgba(255, 255, 255, 0.85)' }}
+              href={item.onClick ? undefined : item.path}
+              onClick={item.onClick}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </div>
 
         {/* Right: User Profile */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
