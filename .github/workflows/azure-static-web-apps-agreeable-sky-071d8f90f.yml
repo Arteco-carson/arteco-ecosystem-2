@@ -1,17 +1,25 @@
-name: Azure Static Web Apps CI/CD
+name: Azure Static Web Apps CI/CD (Ecosystem)
 
 on:
   push:
     branches:
       - main
     paths:
+      - 'arteco-portal/**'
       - 'arteco-acm-frontend/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'scripts/**'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
       - main
     paths:
+      - 'arteco-portal/**'
       - 'arteco-acm-frontend/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'scripts/**'
 
 jobs:
   build_and_deploy_job:
@@ -19,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     env:
+      # Ensure both apps know where the API is
       VITE_API_URL: "https://arteco-fineartapi-prod-bxetekage3a2b6em.eastus2-01.azurewebsites.net"
     steps:
       - uses: actions/checkout@v3
@@ -31,27 +40,29 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'arteco-acm-frontend/package-lock.json'
+          # We now cache based on the root lockfile since we install workspace-wide
+          cache-dependency-path: 'package-lock.json'
 
-      - name: Install and Build
+      - name: Install and Build Ecosystem
         run: |
           npm install
-          npm run build
-        working-directory: arteco-acm-frontend
+          npm run build:ecosystem
+        working-directory: . # Run in the root of the repo
         env:
           CI: false
           VITE_API_URL: ${{ env.VITE_API_URL }}
 
-      - name: Build And Deploy
+      - name: Deploy to Azure Static Web App
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_SKY_071D8F90F }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "arteco-acm-frontend/dist" # Point to the built artifacts
-          skip_app_build: true # Skip Oryx build since we built it manually above
-          output_location: "" # Leave empty when skipping build and pointing app_location to build folder
+          # This is the folder our script created: Portal + ACM inside it
+          app_location: "arteco-portal/dist" 
+          skip_app_build: true # We already built it in the previous step
+          output_location: "" 
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
@@ -64,4 +75,4 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_SKY_071D8F90F }}
           action: "close"
-          app_location: "arteco-acm-frontend"
+          app_location: "arteco-portal/dist"
