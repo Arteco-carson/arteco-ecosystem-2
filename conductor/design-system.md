@@ -33,29 +33,45 @@ This document is the **Single Source of Truth** for the visual appearance of the
 | **Border Radius** | `6px` | Soft but professional. Not "bubbly". |
 | **Shadows** | `0 2px 8px rgba(0,0,0,0.15)` | Subtle lift. No harsh drop shadows. |
 
-## 🏗️ Layout & Chrome (The Shell)
+## 🏗️ Layout & Chrome (The Context-Sensitive Shell)
 
-To ensure a unified experience across the Portal and Sub-modules (ACM, Directory), the Application Shell must follow this structure.
+The ecosystem uses a **Unified Top-Navigation Shell**. This ensures a consistent brand identity while allowing individual applications (Contexts) to inject their own specific navigation tools.
 
-* **Sidebar (`Sider`):**
-    * **Theme:** `light` (matches `Surface` token).
-    * **Behavior:** Collapsible (User controlled).
-    * **Width:** Default `200px` / Collapsed `80px`.
-    * **Logo Area:** Height `32px`, Margin `16px`.
-* **Header:**
-    * **Height:** `64px`.
-    * **Background:** `Surface` token (`#ffffff`).
-    * **Padding:** `0`.
-    * **Elements:**
-        1.  Collapse Trigger (Left).
-        2.  **Contextual Title / Search** (Center). *Note: The Portal Landing places the Omni-Box in the page body.*
-        3.  User Profile/Actions (Right).
-* **Main Content:**
-    * **Outer Margin:** `24px 16px` (Vertical/Horizontal gutter).
-    * **Container:**
-        * Background: `Surface` (`#ffffff`).
-        * Padding: `24px`.
-        * Radius: Matches `Border Radius` token.
+### The Shell Contract
+The `ArtecoShell` component is the master container. It provides the "Teal Ceiling" and standardizes the following slots:
+
+* **1. The Brand Context (Left):**
+    * **Dynamic Title:** Displays the name of the active module (e.g., "Arteco Portal", "Collection Manager").
+    * **Typography:** White, Bold, 20px (`Inter`).
+    * **Behavior:** Acts as the "Home" link for that specific module.
+
+* **2. The Navigation Slot (Center-Left):**
+    * **Context Aware:** The active application injects its primary navigation menu here.
+    * **Portal Mode:** Empty (or Dashboard links).
+    * **App Mode (e.g., ACM):** Displays module-specific tabs (e.g., "Artworks", "Artists", "Valuations").
+    * **Style:** Text links, opacity 0.8 (default) -> 1.0 (hover/active). White text.
+
+* **3. The Omni-Box Slot (Center-Right):**
+    * **Global Search:** A persistent search bar available in all contexts.
+    * **Behavior:** Context-aware (Searching in ACM prioritizes Artworks; searching in Portal looks everywhere).
+
+* **4. User Actions (Right):**
+    * **Profile:** Avatar + Name.
+    * **Notifications:** Bell Icon.
+    * **Settings:** Cog Icon.
+
+### Visual Specs (The "Teal Header")
+* **Type:** Fixed Top Bar (`position: sticky`).
+* **Height:** `64px`.
+* **Background:** `Primary` Token (`#246A73`).
+* **Shadow:** `0 2px 8px rgba(0,0,0,0.15)`.
+* **Padding:** `0 24px`.
+* **Z-Index:** `1000` (Must float above all content).
+
+### Main Content Area
+* **Background:** `Background` Token (`#f0f2f5`).
+* **Container:** Centered, Max-width `1200px` (Default).
+* **Padding:** `24px` (Standard).
 
 ## 👨‍💻 Engineering Implementation: The Theme Config
 
