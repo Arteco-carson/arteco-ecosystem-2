@@ -1,0 +1,9 @@
+{
+  "name": "arteco-ecosystem",
+  "private": true,
+  "workspaces": [
+    "arteco-portal",
+    "arteco-acm-frontend",
+    "packages/*"
+  ]
+}

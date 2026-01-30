@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Typography, Card, Alert } from 'antd';
+import { SharedTest } from '@arteco/shared';
 import MainLayout from './components/layout/MainLayout';
 import OmniBox from './components/OmniBox';
 import IndustryNews from './components/IndustryNews';
@@ -10,6 +11,10 @@ const { Title, Text } = Typography;
 
 function App() {
   const [omniboxResult, setOmniboxResult] = useState(null);
+
+  useEffect(() => {
+    SharedTest();
+  }, []);
 
   const handleOmniBoxResult = (result) => {
     setOmniboxResult(result);
