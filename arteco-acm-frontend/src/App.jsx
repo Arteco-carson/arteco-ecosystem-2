@@ -30,7 +30,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <ConfigProvider theme={theme}>
-      <Router>
+      <Router basename="/acm">
         <Routes>
           {/* Public Authentication - No Navbar/Layout */}
           <Route path="/login" element={<Login />} />
