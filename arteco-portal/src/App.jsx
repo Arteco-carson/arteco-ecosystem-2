@@ -1,54 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Typography, Card, Button } from 'antd';
+import { ConfigProvider, Typography, Card } from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
-// We import the new Auth tools + your SharedTest
-import { SharedTest, AuthProvider, useAuth, LoginModal } from '@arteco/shared';
+import { SharedTest, AuthProvider, useAuth } from '@arteco/shared';
 import MainLayout from './components/layout/MainLayout';
 import OmniBox from './components/OmniBox';
 import IndustryNews from './components/IndustryNews';
+import LandingPage from './pages/LandingPage';
 import { theme } from './config/theme';
 import './App.css';
 
 const { Title, Text } = Typography;
 
-// --- 1. THE INTRO WEBSITE (Visible when NOT logged in) ---
-const PublicWebsite = () => {
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  
-  return (
-    <div style={{ 
-      height: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)',
-      color: 'white'
-    }}>
-      <Title level={1} style={{ color: 'white', marginBottom: 0 }}>
-        ARTECO
-      </Title>
-      <Text style={{ color: '#888', marginBottom: 40, fontSize: '18px' }}>
-        Unified Fine Art Ecosystem
-      </Text>
-      
-      <Button type="primary" size="large" onClick={() => setIsLoginOpen(true)}>
-        Enter Ecosystem
-      </Button>
-
-      {/* The Center Screen Pop-up */}
-      <LoginModal 
-        open={isLoginOpen} 
-        onClose={() => setIsLoginOpen(false)} 
-      />
-    </div>
-  );
-};
-
-// --- 2. THE PRIVATE DASHBOARD (Visible when Logged In) ---
-// This contains the exact UI code you sent me
+// --- 1. THE PRIVATE DASHBOARD (Visible when Logged In) ---
 const PrivateDashboard = () => {
   const [omniboxResult, setOmniboxResult] = useState(null);
+
+  // DEPLOYMENT SAFE LOGIC:
+  // In Azure (Production), this compiles strictly to '/acm/'.
+  // On your Laptop (Dev), it points to the local ACM port including the sub-path.
+  const acmUrl = import.meta.env.DEV 
+    ? 'http://localhost:5174/acm/' 
+    : '/acm/';
 
   useEffect(() => {
     SharedTest();
@@ -91,7 +63,7 @@ const PrivateDashboard = () => {
                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px', marginBottom: '40px' }}>
                             <Card
                                 hoverable
-                                onClick={() => window.location.href = '/acm/'}
+                                onClick={() => window.location.href = acmUrl} 
                                 style={{ borderColor: '#e2e8f0' }}
                             >
                                 <Card.Meta
@@ -112,15 +84,15 @@ const PrivateDashboard = () => {
   );
 };
 
-// --- 3. THE GATEKEEPER ---
+// --- 2. THE GATEKEEPER ---
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
   
-  // The switch happens here!
-  return isAuthenticated ? <PrivateDashboard /> : <PublicWebsite />;
+  // LOGIC: If logged in -> Private Dashboard. If not -> Public Landing Page.
+  return isAuthenticated ? <PrivateDashboard /> : <LandingPage />;
 };
 
-// --- 4. ROOT APP ---
+// --- 3. ROOT APP ---
 function App() {
   return (
     <AuthProvider>
