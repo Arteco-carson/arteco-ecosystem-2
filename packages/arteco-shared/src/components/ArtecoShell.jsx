@@ -4,11 +4,11 @@ import { UserOutlined, LogoutOutlined, SettingOutlined, DownOutlined } from '@an
 import { useAuth } from '../context/AuthContext';
 
 // Define tokens locally or import them
-const ARTECO_TEAL = '#246A73';
+const ARTECO_DEEP_BLUE = '#0D0060';
 
 const { Header, Content } = Layout;
 
-export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], fullWidth = false }) => {
+export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], fullWidth = false, logoSrc }) => {
   const { logout, user } = useAuth();
 
   // The Dropdown Menu for the User Profile
@@ -49,7 +49,7 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
           width: '100%',
           height: '64px',
           padding: '0 24px',
-          backgroundColor: ARTECO_TEAL, // Keeping your Teal Brand Color
+          backgroundColor: ARTECO_DEEP_BLUE, // Updated to Deep Blue
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -58,7 +58,13 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
         }}
       >
         {/* Left: Brand Text */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {logoSrc && (
+              <>
+                  <img src={logoSrc} alt="Logo" style={{ height: '32px' }} />
+                  <div style={{ width: '1px', height: '20px', backgroundColor: '#FFFFFF', opacity: 0.5 }}></div>
+              </>
+          )}
           <span
             style={{
               color: '#ffffff',
@@ -83,7 +89,7 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
             <Button
               key={item.key}
               type="text"
-              style={{ color: 'rgba(255, 255, 255, 0.85)' }}
+              style={{ color: '#FFFFFF' }}
               href={item.onClick ? undefined : item.path}
               onClick={item.onClick}
             >
@@ -98,10 +104,10 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
                 {/* We use user?.username but fallback to 'Ian' for now */}
                 <span style={{ color: '#ffffff', fontWeight: 500 }}>{user?.username || 'Ian'}</span>
                 <Avatar 
-                    icon={<UserOutlined />} 
-                    style={{ backgroundColor: '#ffffff', color: '#246A73' }} 
+                    icon={<UserOutlined style={{ color: ARTECO_DEEP_BLUE }} />} 
+                    style={{ backgroundColor: '#ffffff', color: ARTECO_DEEP_BLUE }} 
                 />
-                <DownOutlined style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }} />
+                <DownOutlined style={{ color: '#FFFFFF', fontSize: '12px' }} />
             </div>
         </Dropdown>
       </Header>

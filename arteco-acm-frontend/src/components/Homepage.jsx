@@ -6,10 +6,13 @@ import {
   Users, 
   ShieldCheck 
 } from 'lucide-react';
+import { theme } from 'antd';
 import FeatureDescription from './FeatureDescription.jsx';
 import './Homepage.css';
 
 const Homepage = () => {
+  const { useToken } = theme;
+  const { token } = useToken();
   const navigate = useNavigate();
   const [hoveredFeatureId, setHoveredFeatureId] = useState(null);
 
@@ -62,7 +65,7 @@ const Homepage = () => {
             onMouseEnter={() => setHoveredFeatureId(option.id)}
             onMouseLeave={() => setHoveredFeatureId(null)}
           >
-            <div className="option-icon" style={{ color: '#246A73' }}>{option.icon}</div>
+            <div className="option-icon" style={{ color: token.colorPrimary }}>{option.icon}</div>
             <h2 style={{ color: '#1e293b' }}>{option.title}</h2>
           </div>
         ))}

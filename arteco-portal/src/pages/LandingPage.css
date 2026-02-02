@@ -1,133 +1,266 @@
-/* arteco-portal/src/pages/LandingPage.css */
+/* 1. IMPORT LATO FONT */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
 
-/* --- RESET & FONTS --- */
-.landing-container {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #1a1a1a;
+/* --- GLOBAL RESET --- */
+.lp-container {
+  font-family: 'Lato', sans-serif;
+  color: #202020;
+  width: 100%;
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  background-color: white; 
 }
 
-h1, h2, h3, h4 {
-  /* If you have a Serif font like 'Playfair Display' or 'Merriweather', add it here */
-  font-family: 'Times New Roman', serif; 
-  font-weight: 400;
-}
-
-/* --- HERO SECTION --- */
-.hero-section {
-  position: relative;
-  height: 90vh; /* Takes up most of the screen */
+/* --- SECTION 1: HERO --- */
+.lp-hero-section {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: white;
-  background-color: #1a1a1a; /* Fallback color */
-  background-size: cover;
-  background-position: center;
-  /* We set the image in the JS component so it's easy to swap */
+  min-height: 80vh; 
+  width: 100%;
 }
 
-.hero-overlay {
+.lp-hero-left {
+  flex: 0 0 55%; 
+  background-color: #0D0060;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 8% 15% 8% 6%; 
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* THE SLIDESHOW STAGE */
+.lp-hero-right {
+  flex: 1; 
+  position: relative; /* Acts as the frame */
+  overflow: hidden;   /* Crops anything spilling out */
+  background-color: #eee; 
+}
+
+/* THE SLIDESHOW LAYERS */
+.lp-slide-layer {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 100%);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;    /* Forces image to fill the frame */
+  background-position: center;
+  opacity: 0;                /* Hidden by default */
+  transition: opacity 1.5s ease-in-out; /* Smooth fade */
   z-index: 1;
 }
 
-.hero-content {
-  position: relative;
+.lp-slide-layer.active {
+  opacity: 1; /* Visible */
   z-index: 2;
-  max-width: 800px;
-  padding: 0 20px;
-  animation: fadeIn 1.5s ease-out;
 }
 
-.hero-title {
-  font-size: 4.5rem; /* Massive text */
-  margin-bottom: 1rem;
-  letter-spacing: -1px;
-  line-height: 1.1;
-}
-
-.hero-subtitle {
-  font-size: 1.5rem;
-  font-family: sans-serif;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 300;
-  margin-bottom: 2.5rem;
-}
-
-/* --- BUTTONS --- */
-.btn-primary-glow {
-  background: #246A73;
-  border: none;
-  color: white;
-  padding: 15px 40px;
-  font-size: 1.1rem;
-  border-radius: 50px; /* Pill shape */
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(36, 106, 115, 0.4);
-}
-
-.btn-primary-glow:hover {
-  background: #1d555c;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(36, 106, 115, 0.6);
-}
-
-.btn-nav {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.3);
-  color: white;
-  padding: 8px 24px;
-  border-radius: 30px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-nav:hover {
-  background: white;
-  color: #1a1a1a;
-}
-
-/* --- SECTIONS --- */
-.section-white {
-  background: white;
-  padding: 100px 20px;
-}
-
-.section-grey {
-  background: #f9fafb;
-  padding: 80px 20px;
-}
-
-.feature-card {
-  text-align: center;
-  padding: 40px 20px;
-  transition: transform 0.3s;
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-}
-
-.feature-icon {
-  font-size: 3rem;
-  color: #246A73;
-  margin-bottom: 20px;
+/* Logo Image Styling */
+.lp-logo-img {
+  width: 180px; 
+  height: auto;
+  margin-bottom: 4rem;
   display: block;
 }
 
-/* --- ANIMATIONS --- */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Typography */
+.lp-hero-heading {
+  color: #96AAEF;
+  font-size: 2rem; /* ~25pt */
+  line-height: 1.2;
+  font-weight: 700;
+  margin-bottom: 1rem;
 }
 
-/* Mobile Responsiveness */
+.lp-hero-line {
+  width: 100%; 
+  height: 2px;
+  background-color: #96AAEF;
+  margin-bottom: 1.5rem;
+}
+
+.lp-hero-subtext {
+  color: #F9FCFF;
+  font-size: 1.6rem; /* ~20pt */
+  line-height: 1.4;
+  font-weight: 300;
+}
+
+/* The LLM Search Bar */
+.lp-search-container {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  background: white;
+  border-radius: 50px;
+  border: 2px solid #0D0060; 
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  z-index: 10; /* Sits on top of images */
+}
+
+.lp-search-input {
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  color: #666;
+  width: 100%;
+  font-family: 'Lato', sans-serif;
+}
+
+/* --- SECTIONS: SHARED --- */
+.lp-section-white {
+  background: white;
+  padding: 60px 5%; 
+}
+
+.lp-section-divider {
+  width: 100%;
+  height: 1px;
+  background-color: #CDC4F4;
+  margin-top: 60px;
+}
+
+.lp-h2 {
+  color: #202020;
+  font-size: 1.8rem; 
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  margin-top: 0; 
+}
+
+.lp-sub-h2 {
+  color: #202020;
+  font-size: 1.1rem; 
+  margin-bottom: 3rem;
+  max-width: 800px;
+}
+
+/* --- SECTION 2: TOOL GRID --- */
+.lp-grid-6 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 40px;
+}
+
+.lp-tool-card h4 {
+  font-size: 0.9rem; 
+  font-weight: 900;
+  text-transform: uppercase;
+  margin: 10px 0;
+}
+
+.lp-tool-card p {
+  font-size: 0.9rem; 
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.lp-link {
+  color: #0D0060;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+/* --- SECTION 3: COMMUNITY --- */
+.lp-split-section {
+  display: flex;
+  gap: 40px;
+  align-items: stretch; 
+}
+
+.lp-split-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
+}
+
+.lp-split-right {
+  flex: 0 0 45%;
+  background: #eee;
+  background-size: cover;
+  background-position: center;
+  border-radius: 4px;
+  min-height: 400px;
+}
+
+.lp-tile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.lp-community-tile {
+  background: #F9FCFF;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.lp-btn-primary {
+  background: #0D0060;
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: fit-content;
+  transition: opacity 0.2s;
+}
+
+.lp-btn-primary:hover {
+  opacity: 0.9;
+}
+
+/* --- SECTION 4: INSIGHTS --- */
+.lp-insights-container {
+  display: flex;
+  gap: 60px;
+}
+.lp-insights-img {
+  flex: 1;
+  min-height: 400px;
+  background: #eee;
+  background-size: cover;
+  background-position: center;
+}
+.lp-insights-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; 
+  padding-top: 0;
+}
+
+/* --- MOBILE RESPONSIVE --- */
 @media (max-width: 768px) {
-  .hero-title { font-size: 3rem; }
-  .hero-section { height: 80vh; }
+  .lp-hero-section { flex-direction: column; }
+  .lp-hero-left { flex: auto; padding: 40px 20px; }
+  .lp-hero-right { height: 300px; }
+  
+  .lp-hero-heading { font-size: 1.8rem; }
+  .lp-hero-subtext { font-size: 1.3rem; }
+  
+  .lp-grid-6 { grid-template-columns: 1fr; } 
+  
+  .lp-split-section { flex-direction: column; }
+  .lp-insights-container { flex-direction: column; }
+  
+  .lp-search-container { width: 90%; }
+  
+  .lp-section-white { padding: 40px 20px; }
 }

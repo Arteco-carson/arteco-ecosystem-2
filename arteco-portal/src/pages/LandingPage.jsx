@@ -1,129 +1,198 @@
-import React, { useState } from 'react';
-import { Layout, Row, Col, Typography, Space, Button } from 'antd';
-import { 
-  BankOutlined, 
-  ScanOutlined, 
-  LineChartOutlined, 
-  ArrowRightOutlined 
-} from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { ConfigProvider } from 'antd';
+// We import your custom theme configuration directly
+import { theme as appTheme } from '../config/theme';
+import { SendOutlined, AppstoreOutlined, GlobalOutlined, ShopOutlined, SafetyCertificateOutlined, RocketOutlined, LineChartOutlined } from '@ant-design/icons';
 import { LoginModal } from '@arteco/shared';
-import './LandingPage.css'; // Import our new styles
+import './LandingPage.css'; 
 
-const { Content, Footer } = Layout;
-const { Title, Text } = Typography;
+// 1. ASSET IMPORTS
+import hero1 from '../assets/LandingHero1.png';
+import hero2 from '../assets/LandingHero2.jpeg';
+import teamImg from '../assets/Team.jpg';
+import galleryImg from '../assets/Gallery.jpg';
+import logoImg from '../assets/White ARTECO logo.png';
 
 const LandingPage = () => {
+  // FIX: We read the color directly from the config file. 
+  // This bypasses the React Context issue entirely.
+  const brandBlue = appTheme.token.colorPrimary;
+  
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-  // 🖼️ IMAGE PLACEHOLDERS - Replace these URLs with your local assets later!
-  const assets = {
-    // A nice dark museum gallery or artwork close-up
-    heroBg: "https://images.unsplash.com/photo-1544531586-fde5298cdd40?q=80&w=2070&auto=format&fit=crop", 
-    logo: "ARTECO" // Or use an <img /> tag here
-  };
+  // 2. SLIDESHOW CONFIGURATION
+  const heroImages = [hero1, hero2]; 
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroIndex((prevIndex) => (prevIndex + 1) % heroImages.length);
+    }, 5000); 
+
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
 
   return (
-    <Layout className="landing-container">
-      
-      {/* 1. HERO SECTION */}
-      <div 
-        className="hero-section" 
-        style={{ backgroundImage: `url(${assets.heroBg})` }}
-      >
-        <div className="hero-overlay"></div>
+    // We keep ConfigProvider so buttons/modals inside use the right font/style
+    <ConfigProvider theme={appTheme}>
+      <div className="lp-container">
         
-        {/* Transparent Navbar embedded in Hero */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-            <div style={{ color: 'white', fontWeight: 700, fontSize: '1.5rem', letterSpacing: '2px' }}>
-                {assets.logo}
+        {/* HERO SECTION */}
+        <div className="lp-hero-section">
+          {/* Left Column */}
+          <div className="lp-hero-left">
+            <img src={logoImg} alt="ARTECO" className="lp-logo-img" />
+            
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div className="lp-hero-heading">
+                Give every collection<br/>
+                the care it deserves.
+              </div>
+              <div className="lp-hero-line"></div>
+              <div className="lp-hero-subtext">
+                Connect to verified professionals worldwide, securely manage your assets, and streamline operations, with AI, data, and applications built to simplify collection management.
+              </div>
             </div>
-            <Space>
-                <button className="btn-nav" onClick={() => setIsLoginOpen(true)}>Sign In</button>
-            </Space>
-        </div>
-
-        <div className="hero-content">
-          <h1 className="hero-title">Preserving Legacy.</h1>
-          <p className="hero-subtitle">
-            The unified ecosystem for art collection management, <br/> 
-            valuation tracking, and condition reporting.
-          </p>
-          
-          <button className="btn-primary-glow" onClick={() => setIsLoginOpen(true)}>
-            Enter Ecosystem <ArrowRightOutlined style={{ marginLeft: 8 }} />
-          </button>
-        </div>
-      </div>
-
-      {/* 2. LOGO STRIP (Trusted By) */}
-      <div className="section-grey" style={{ padding: '40px 0', borderBottom: '1px solid #eee' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-             <Text type="secondary" style={{ display: 'block', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '1px', fontSize: '12px' }}>
-                Trusted by leading institutions
-             </Text>
-             {/* TODO: Replace this Row with your actual Logo Images.
-                 Just map over an array of <img> tags.
-             */}
-             <Row justify="center" gutter={[48, 16]} align="middle" style={{ opacity: 0.6, filter: 'grayscale(100%)' }}>
-                 <Col><span style={{ fontSize: 20, fontWeight: 700, color: '#999' }}>LOUVRE</span></Col>
-                 <Col><span style={{ fontSize: 20, fontWeight: 700, color: '#999' }}>TATE</span></Col>
-                 <Col><span style={{ fontSize: 20, fontWeight: 700, color: '#999' }}>MOMA</span></Col>
-                 <Col><span style={{ fontSize: 20, fontWeight: 700, color: '#999' }}>GUGGENHEIM</span></Col>
-             </Row>
           </div>
+
+          {/* Right Column (Stacked Slideshow) */}
+          <div className="lp-hero-right">
+             
+             {/* Render ALL images stacked, toggle opacity */}
+             {heroImages.map((img, index) => (
+               <div 
+                 key={index}
+                 className={`lp-slide-layer ${index === heroIndex ? 'active' : ''}`}
+                 style={{ backgroundImage: `url(${img})` }}
+               />
+             ))}
+
+             {/* Search Bar */}
+             <div className="lp-search-container">
+               <input className="lp-search-input" placeholder="Ask a question..." />
+               <SendOutlined style={{ color: brandBlue, fontSize: '1.2rem', cursor: 'pointer' }} />
+             </div>
+          </div>
+        </div>
+
+        {/* POWERFUL TOOLS SECTION */}
+        <div className="lp-section-white">
+          <h2 className="lp-h2">Powerful digital tools - enabling teams, streamlining processes</h2>
+          <p className="lp-sub-h2">Your comprehensive directory for art industry services, connecting professionals across fine art moving, storage, conservation, and more.</p>
+          
+          <div className="lp-grid-6">
+             <div className="lp-tool-card">
+                <AppstoreOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <h4>COLLECTION MANAGEMENT</h4>
+                <p>A centralized, digital command center for galleries, dealers and collectors that records every item’s lifecycle — from acquisition through loan, exhibition and sale — enabling coordinated operations across the entire Arteco-System.</p>
+                <a href="#" className="lp-link">Learn more</a>
+             </div>
+
+             <div className="lp-tool-card">
+                <SafetyCertificateOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <h4>CONDITION REPORTING</h4>
+                <p>A standardized, auditable condition reporting tool that digitizes inspections and restoration logs so conservation data travels with the asset and informs valuation, insurance and shipping decisions across Arteco.</p>
+                <a href="#" className="lp-link">Learn more</a>
+             </div>
+
+             <div className="lp-tool-card">
+                <RocketOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <h4>SERVICE PROVIDER ERP</h4>
+                <p>An intelligent shipping module that automates logistics for artwork movement by linking item specs, condition data, insurance and customs requirements to carrier and route selection.</p>
+                <a href="#" className="lp-link">Learn more</a>
+             </div>
+
+             <div className="lp-tool-card">
+                <GlobalOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <h4>GLOBAL DIRECTORY</h4>
+                <p>A curated, verifiable directory of galleries, conservators, shippers, framers and other art service professionals that fosters trust and efficient talent sourcing across the Arteco platform.</p>
+                <a href="#" className="lp-link">Learn more</a>
+             </div>
+
+             <div className="lp-tool-card">
+                <ShopOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <h4>MARKET PLACE</h4>
+                <p>A standardized, auditable condition reporting tool that digitizes inspections and restoration logs so conservation data travels with the asset and informs valuation, insurance and shipping decisions across Arteco.</p>
+                <a href="#" className="lp-link">Learn more</a>
+             </div>
+
+             <div className="lp-tool-card">
+                <LineChartOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <h4>SMART INTEGRATIONS</h4>
+                <p>An intelligent shipping module that automates logistics for artwork movement by linking item specs, condition data, insurance and customs requirements to carrier and route selection.</p>
+                <a href="#" className="lp-link">Learn more</a>
+             </div>
+          </div>
+
+          <div className="lp-section-divider"></div>
+        </div>
+
+        {/* GLOBAL COMMUNITY */}
+        <div className="lp-section-white" style={{ paddingTop: 0 }}>
+          <h2 className="lp-h2" style={{ fontSize: '2rem' }}>Join our Global Community</h2>
+          <p className="lp-sub-h2">Your comprehensive directory for art industry services, connecting professionals across fine art moving, storage, conservation, and more.</p>
+
+          <div className="lp-split-section">
+            <div className="lp-split-left">
+              <div className="lp-tile-stack">
+                <div className="lp-community-tile">
+                  <GlobalOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                  <div>
+                    <h4 style={{ margin: '0 0 5px 0' }}>GLOBAL DIRECTORY</h4>
+                    <p style={{ margin: 0 }}>Curated database connecting verified art service providers globally.</p>
+                  </div>
+                </div>
+
+                <div className="lp-community-tile">
+                  <RocketOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                  <div>
+                    <h4 style={{ margin: '0 0 5px 0' }}>SEAMLESS COLLABORATION</h4>
+                    <p style={{ margin: 0 }}>Curated database connecting verified art service providers globally.</p>
+                  </div>
+                </div>
+
+                <div className="lp-community-tile">
+                  <ShopOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                  <div>
+                    <h4 style={{ margin: '0 0 5px 0' }}>MARKET PLACE</h4>
+                    <p style={{ margin: 0 }}>Curated database connecting verified art service providers globally.</p>
+                  </div>
+                </div>
+              </div>
+
+              <button className="lp-btn-primary" onClick={() => setIsLoginOpen(true)}>
+                Register
+              </button>
+            </div>
+
+            {/* Right: Team Image */}
+            <div className="lp-split-right" style={{ backgroundImage: `url(${teamImg})` }}></div>
+          </div>
+
+          <div className="lp-section-divider"></div>
+        </div>
+
+        {/* INDUSTRY INSIGHTS */}
+        <div className="lp-section-white" style={{ paddingTop: 0 }}>
+          <div className="lp-insights-container">
+            {/* Left: Gallery Image */}
+            <div className="lp-insights-img" style={{ backgroundImage: `url(${galleryImg})` }}></div>
+            
+            <div className="lp-insights-text">
+              <h2 className="lp-h2" style={{ marginTop: 0 }}>Industry Insights</h2>
+              <p className="lp-sub-h2" style={{ maxWidth: '100%' }}>
+                A standardized, auditable condition reporting tool that digitizes inspections and restoration logs so conservation data travels with the asset and informs valuation, insurance and shipping decisions across Arteco.
+              </p>
+              <button className="lp-btn-primary" onClick={() => setIsLoginOpen(true)}>
+                Join Now
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <LoginModal open={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
       </div>
-
-      {/* 3. FEATURE GRID */}
-      <Content className="section-white">
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <Row gutter={[48, 48]}>
-            <Col xs={24} md={8}>
-              <div className="feature-card">
-                <BankOutlined className="feature-icon" />
-                <Title level={3}>Collection Manager</Title>
-                <Text type="secondary">
-                  A comprehensive registry for tracking provenance, location, and insurance valuation over time.
-                </Text>
-              </div>
-            </Col>
-            <Col xs={24} md={8}>
-              <div className="feature-card">
-                <ScanOutlined className="feature-icon" />
-                <Title level={3}>Defect Reporting</Title>
-                <Text type="secondary">
-                  Mobile-first tools for conservators to document damage, scratches, and restoration needs in the field.
-                </Text>
-              </div>
-            </Col>
-            <Col xs={24} md={8}>
-              <div className="feature-card">
-                <LineChartOutlined className="feature-icon" />
-                <Title level={3}>Market Intelligence</Title>
-                <Text type="secondary">
-                  Real-time connection to auction results and market indices to keep your valuation accurate.
-                </Text>
-              </div>
-            </Col>
-          </Row>
-        </div>
-      </Content>
-
-      {/* 4. FOOTER */}
-      <Footer style={{ textAlign: 'center', background: '#111', color: '#666', padding: '60px 0' }}>
-        <Title level={4} style={{ color: 'white', letterSpacing: '2px', marginBottom: 20 }}>ARTECO</Title>
-        <Space size="large" style={{ marginBottom: 40 }}>
-            <a href="#" style={{ color: '#888' }}>About</a>
-            <a href="#" style={{ color: '#888' }}>Privacy</a>
-            <a href="#" style={{ color: '#888' }}>Contact</a>
-        </Space>
-        <div>
-           <Text style={{ color: '#444' }}>© 2026 Arteco System Ltd. All Rights Reserved.</Text>
-        </div>
-      </Footer>
-
-      {/* 5. LOGIN MODAL */}
-      <LoginModal open={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
-    </Layout>
+    </ConfigProvider>
   );
 };
 
