@@ -176,13 +176,7 @@ const CollectionsList = () => {
   }
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#246A73',
-        },
-      }}
-    >
+    <>
     {contextHolder}
     <div style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -317,7 +311,7 @@ const CollectionsList = () => {
         {unassignedArtworks.length === 0 && <div style={{ marginTop: 10, color: '#999' }}>No unassigned artworks found.</div>}
       </Modal>
     </div>
-    </ConfigProvider>
+    </>
   );
 };
 

@@ -212,13 +212,7 @@ const Profile = () => {
   if (fetching) return <Spin size="large" tip="Validating Credentials..." />;
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#246A73',
-        },
-      }}
-    >
+    <>
       {contextHolder}
       <Card title="UserProfile" extra={
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -332,7 +326,7 @@ const Profile = () => {
         open={isEditLocationModalOpen}
         onCancel={() => setIsEditLocationModalOpen(false)}
         footer={[
-          <Button key="delete" type="primary" onClick={handleDeleteLocation} style={{ float: 'left', backgroundColor: '#246A73' }}>Delete</Button>,
+          <Button key="delete" type="primary" onClick={handleDeleteLocation} style={{ float: 'left' }}>Delete</Button>,
           <Button key="cancel" onClick={() => setIsEditLocationModalOpen(false)}>Cancel</Button>,
           <Button key="submit" type="primary" loading={editLocationLoading} onClick={() => editLocationForm.submit()}>Update Location</Button>
         ]}
@@ -358,7 +352,7 @@ const Profile = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </ConfigProvider>
+    </>
   );
 };
 

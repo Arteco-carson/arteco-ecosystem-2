@@ -96,13 +96,6 @@ function Register() {
   };
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#246A73',
-        },
-      }}
-    >
     <div style={{ maxWidth: '500px', margin: '50px auto', padding: '20px', boxSizing: 'border-box' }}>
       <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '15px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '25px' }}>
@@ -223,7 +216,6 @@ function Register() {
         </Link>
       </div>
     </div>
-    </ConfigProvider>
   );
 }
 

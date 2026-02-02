@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Button } from 'antd';
 import { ChevronLeft, BadgePoundSterling, Save, User, Palette, Loader2 } from 'lucide-react';
 import API_URL from './api';
 
@@ -160,18 +161,26 @@ function AddAppraisal() {
             />
           </div>
 
-          <button type="submit" disabled={isSubmitting} style={{ width: '100%', backgroundColor: isSubmitting ? '#94a3b8' : '#246A73', color: 'white', padding: '15px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '1rem' }}>
-            {isSubmitting ? (
-              <>
-                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                Processing...
-              </>
-            ) : (
-              <>
-                <Save size={18} /> Update Appraisal & Valuation
-              </>
-            )}
-          </button>
+          <Button 
+            type="primary" 
+            htmlType="submit" 
+            loading={isSubmitting} 
+            block 
+            size="large" 
+            style={{ 
+              fontWeight: 'bold', 
+              height: 'auto', 
+              padding: '15px', 
+              fontSize: '1rem', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '10px' 
+            }}
+          >
+            {!isSubmitting && <Save size={18} />}
+            {isSubmitting ? 'Processing...' : 'Update Appraisal & Valuation'}
+          </Button>
         </form>
       </div>
     </div>

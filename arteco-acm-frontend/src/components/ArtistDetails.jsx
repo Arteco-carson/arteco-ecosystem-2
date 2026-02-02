@@ -100,7 +100,7 @@ function ArtistDetails() {
   if (!artist) return <div style={{ textAlign: 'center', padding: '50px' }}>Artist record not found.</div>;
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#246A73' } }}>
+    <>
     {contextHolder}
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '20px' }}>
       <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -180,7 +180,7 @@ function ArtistDetails() {
         </Upload.Dragger>
       </Modal>
     </div>
-    </ConfigProvider>
+    </>
   );
 }
 

@@ -52,13 +52,6 @@ function ArtistList() {
   if (loading) return <div style={{ textAlign: 'center', padding: '40px' }}>Loading Artist Registry...</div>;
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#246A73',
-        },
-      }}
-    >
     <div style={{ padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h2 style={{ color: '#1e293b', margin: 0 }}>Artists</h2>
@@ -110,7 +103,6 @@ function ArtistList() {
             onArtistCreated={handleArtistCreated}
         />
     </div>
-    </ConfigProvider>
   );
 }
 

@@ -96,13 +96,6 @@ const CreateCollection = () => {
   };
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#246A73',
-        },
-      }}
-    >
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <button 
             onClick={() => navigate('/collections')} 
@@ -179,7 +172,6 @@ const CreateCollection = () => {
         onArtworkCreated={handleArtworkCreated}
       />
     </div>
-    </ConfigProvider>
   );
 };
 

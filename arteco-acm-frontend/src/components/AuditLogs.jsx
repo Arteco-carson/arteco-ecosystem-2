@@ -159,13 +159,6 @@ const AuditLogs = () => {
   };
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#246A73',
-        },
-      }}
-    >
       <div style={{ padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <Title level={2} style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -258,7 +251,6 @@ const AuditLogs = () => {
           )}
         </Modal>
       </div>
-    </ConfigProvider>
   );
 };
 

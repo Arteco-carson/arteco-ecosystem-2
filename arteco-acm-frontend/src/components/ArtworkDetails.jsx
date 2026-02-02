@@ -201,7 +201,7 @@ function ArtworkDetails() {
   ];
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#246A73' } }}>
+    <>
     {contextHolder}
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       {/* FIXED: Dynamic Back Button */}
@@ -261,23 +261,14 @@ function ArtworkDetails() {
               </span>
               <h1 style={{ margin: '10px 0 20px 0', color: '#1e293b', fontSize: '2.25rem' }}>{artwork.title}</h1>
             </div>
-            <button 
+            <Button 
+              type="primary"
               onClick={handleEditClick}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                backgroundColor: '#246A73', 
-                border: 'none', 
-                borderRadius: '8px', 
-                padding: '8px 16px', 
-                cursor: 'pointer', 
-                color: 'white', 
-                fontWeight: '600'
-              }}
+              icon={<Edit size={18} />}
+              style={{ fontWeight: '600' }}
             >
-              <Edit size={18} /> Edit Details
-            </button>
+              Edit Details
+            </Button>
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '30px' }}>
@@ -348,23 +339,14 @@ function ArtworkDetails() {
                 £{artwork.acquisitionCost?.toLocaleString('en-GB')}
               </p>
             </div>
-            <button 
+            <Button 
+              type="primary"
               onClick={() => navigate(`/add-appraisal/${artwork.artworkId}`)}
-              style={{ 
-                backgroundColor: '#246A73', 
-                color: 'white', 
-                border: 'none', 
-                padding: '10px 20px', 
-                borderRadius: '8px', 
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontWeight: '600'
-              }}
+              icon={<BadgePoundSterling size={18} />}
+              style={{ fontWeight: '600', height: 'auto', padding: '10px 20px' }}
             >
-              <BadgePoundSterling size={18} /> Update Valuation
-            </button>
+              Update Valuation
+            </Button>
           </div>
         </div>
 
@@ -471,7 +453,7 @@ function ArtworkDetails() {
         <p className="ant-upload-text">Click or drag files to this area to upload</p>
       </Upload.Dragger>
     </Modal>
-    </ConfigProvider>
+    </>
   );
 }
 

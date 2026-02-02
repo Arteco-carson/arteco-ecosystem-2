@@ -42,7 +42,6 @@ function AppraisalList() {
         <Button 
           type="primary"
           icon={<Plus size={18} />}
-          style={{ backgroundColor: '#246A73', borderColor: '#246A73' }}
           onClick={() => navigate('/add-appraisal')}
         >
            Add Appraisal

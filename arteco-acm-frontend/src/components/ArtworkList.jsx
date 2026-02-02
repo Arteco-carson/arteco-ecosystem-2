@@ -83,20 +83,12 @@ function ArtworkList() {
   if (loading) return <div style={{ textAlign: 'center', padding: '40px' }}>Loading Artwork Inventory...</div>;
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#246A73',
-        },
-      }}
-    >
     <div style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <h2 style={{ color: '#1e293b', margin: 0 }}>Artworks</h2>
         <Button 
           type="primary"
           icon={<Plus size={18} />}
-          style={{ backgroundColor: '#246A73', borderColor: '#246A73' }}
           onClick={() => setIsModalVisible(true)}
         >
            Add Artwork
@@ -137,7 +129,6 @@ function ArtworkList() {
                   <Button 
                     type="primary"
                     icon={<Trash2 size={16} />}
-                    style={{ backgroundColor: '#246A73', borderColor: '#246A73' }}
                     onClick={() => handleDeleteArtwork(art.artworkId)}
                   />
                 </div>
@@ -159,7 +150,6 @@ function ArtworkList() {
         onArtworkCreated={handleArtworkCreated}
       />
     </div>
-    </ConfigProvider>
   );
 }
 

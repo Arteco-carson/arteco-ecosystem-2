@@ -53,13 +53,7 @@ const Login = () => {
   };
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#246A73',
-        },
-      }}
-    >
+    <>
     {contextHolder}
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f5' }}>
       <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
@@ -91,7 +85,7 @@ const Login = () => {
             </Button>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px' }}>
               <Link to="/register">Register as a New User</Link>
-              <span style={{ color: '#246A73', cursor: 'pointer' }} onClick={() => setIsResetModalOpen(true)}>Reset your Password</span>
+              <span style={{ color: '#0D0060', cursor: 'pointer' }} onClick={() => setIsResetModalOpen(true)}>Reset your Password</span>
             </div>
           </Form.Item>
         </Form>
@@ -139,7 +133,7 @@ const Login = () => {
         </Form>
       </Modal>
     </div>
-    </ConfigProvider>
+    </>
   );
 };
 
