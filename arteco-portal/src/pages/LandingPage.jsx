@@ -20,10 +20,11 @@ const LandingPage = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
   
-  // Search Animation State
+  // Search Animation & AI State
   const [searchActive, setSearchActive] = useState(false);
   const [question, setQuestion] = useState('');
   const [aiResponse, setAiResponse] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const heroImages = [hero1, hero2]; 
 
@@ -35,18 +36,95 @@ const LandingPage = () => {
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
-  // SEARCH HANDLER
-  const handleSearch = () => {
+  // --- HELPER: FORMAT TEXT WITH LINE BREAKS ---
+  const formatTextWithBreaks = (text) => {
+    if (!text) return '';
+    const words = text.split(' ');
+    let formatted = '';
+    for (let i = 0; i < words.length; i++) {
+      formatted += words[i] + ' ';
+      // Add a double newline every 20 words for clean separation
+      if ((i + 1) % 20 === 0) formatted += '\n'; 
+    }
+    return formatted;
+  };
+
+  // --- AZURE OPENAI HANDLER ---
+  const handleSearch = async () => {
     if (!question.trim()) return;
 
     setSearchActive(true);
+    setLoading(true);
+    setAiResponse(''); 
 
-    // Dummy Response - Deliberately long to trigger scrollbar
-    setTimeout(() => {
-      const dummyText = `Based on the parameters of your request regarding "${question}", here is the preliminary analysis found within the Arteco ecosystem:\n\n1. Market Context: The artist has seen a 12% increase in auction performance over the last 18 months, particularly in the European sector.\n\n2. Logistics: For a collection of this size, we recommend temperature-controlled consolidation points in Geneva or London before final transit.\n\n3. Conservation Data: Similar works from this period (Late 20th Century) often require specific humidity monitoring (45-55% RH). Our database flags 3 verified conservators in your region with this specific expertise.\n\n4. Documentation: Please ensure all provenance documents are digitized. Our system can automatically tag these against the new entries.\n\n5. Next Steps: Would you like to schedule a valuation with a partner appraiser, or proceed directly to logistics planning?\n\n(This is a generated placeholder response to demonstrate the scrollable text area capability. If the content exceeds the set height, a scrollbar will appear on the right side as requested.)\n\nAdditional filler text to ensure we hit the scroll limit:\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.`;
-      
-      setAiResponse(dummyText);
-    }, 1200); // Waits for the move-up animation to almost finish
+    const endpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT;
+    const apiKey = import.meta.env.VITE_AZURE_OPENAI_KEY;
+    const deployment = import.meta.env.VITE_AZURE_OPENAI_DEPLOYMENT;
+    const apiVersion = "2024-08-01-preview";
+
+    const websiteContext = `
+      OFFICIAL ARTECO WEBSITE CONTENT:
+      Headline: Give every collection the care it deserves.
+      Mission: Connect to verified professionals worldwide, securely manage your assets, and streamline operations, with AI, data, and applications built to simplify collection management.
+      CORE TOOLS:
+      1. Collection Management: Centralized command center for item lifecycles.
+      2. Condition Reporting: Standardized, auditable tool digitizing inspections.
+      3. Service Provider ERP: Intelligent shipping module automating logistics.
+      4. Global Directory: Curated, verifiable directory of art professionals.
+      5. Market Place: Secure trading and transparent asset history.
+      6. Smart Integrations: Connects disparate systems.
+    `;
+
+    const instructions = `
+      You are ARTECO, the AI assistant for this platform.
+      CONTEXT: ${websiteContext}
+      INSTRUCTIONS:
+      1. Answer using ONLY the Context provided.
+      2. If the answer is not in the context, state you can only discuss Arteco features.
+      3. Keep response strictly between 70-120 words.
+      4. Tone: Professional and concise.
+    `;
+
+    try {
+      const response = await fetch(`${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': apiKey
+        },
+        body: JSON.stringify({
+          messages: [
+            // Combine instructions into user message to avoid filtering/ignoring
+            { role: "user", content: instructions + "\n\nUSER QUESTION: " + question }
+          ],
+          // CORRECTED PARAMETERS FOR REASONING MODELS
+          temperature: 1, 
+          max_completion_tokens: 2000 
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("FULL AZURE ERROR:", errorData);
+        throw new Error(errorData.error?.message || `Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.choices && data.choices.length > 0) {
+        const rawContent = data.choices[0].message.content;
+        // Apply the line break formatting before setting state
+        setAiResponse(formatTextWithBreaks(rawContent));
+      } else {
+        setAiResponse("No analysis returned.");
+      }
+
+    } catch (error) {
+      console.error("Catch Block Error:", error);
+      setAiResponse(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -101,17 +179,27 @@ const LandingPage = () => {
                    value={question}
                    onChange={(e) => setQuestion(e.target.value)}
                    onKeyDown={handleKeyDown}
+                   disabled={loading} 
                  />
                  <SendOutlined 
-                   style={{ color: '#0D0060', fontSize: '1.2rem', cursor: 'pointer' }} 
-                   onClick={handleSearch}
+                   style={{ color: '#0D0060', fontSize: '1.2rem', cursor: 'pointer', opacity: loading ? 0.5 : 1 }} 
+                   onClick={!loading ? handleSearch : null}
                  />
                </div>
 
                {/* Results Box (Fades In) */}
                {searchActive && (
                  <div className="lp-result-box">
-                   {aiResponse || "Analyzing request..."}
+                   {loading 
+                     ? <span style={{ fontStyle: 'italic', color: '#666' }}>Analyzing Request...</span> 
+                     : <pre style={{ 
+                         whiteSpace: 'pre-wrap', 
+                         fontFamily: "'Lato', sans-serif", // Ensure it uses site font, not monospace
+                         margin: 0 
+                       }}>
+                         {aiResponse || "No data returned."}
+                       </pre>
+                   }
                  </div>
                )}
 
