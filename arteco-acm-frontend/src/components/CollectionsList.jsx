@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { Card, Col, Row, Spin, Typography, Select, Alert, Button, ConfigProvider, Modal, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import API_URL from './api';
+import api from '../api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -21,24 +20,9 @@ const CollectionsList = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
 
-  // Unified Header Helper with explicit trimming for UK Management Console
-  const getAuthHeader = useCallback(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    return { Authorization: `Bearer ${token.trim()}` };
-  }, []);
-
   const fetchArtworksForCollection = useCallback(async (collectionId) => {
     try {
-      const headers = getAuthHeader();
-      if (!headers) {
-        navigate('/login');
-        return;
-      }
-
-      const res = await axios.get(`${API_URL}/api/artworks/user?collectionId=${collectionId}`, {
-        headers
-      });
+      const res = await api.get(`/api/artworks/user?collectionId=${collectionId}`);
       setArtworks(res.data);
       setError(null);
     } catch (err) {
@@ -50,7 +34,7 @@ const CollectionsList = () => {
         setError("Failed to retrieve collection artworks.");
       }
     }
-  }, [getAuthHeader, navigate]);
+  }, [navigate]);
 
   const handleDeleteCollection = () => {
     if (!selectedCollection) return;
@@ -68,8 +52,7 @@ const CollectionsList = () => {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          const headers = getAuthHeader();
-          await axios.delete(`${API_URL}/api/collections/${selectedCollection}`, { headers });
+          await api.delete(`/api/collections/${selectedCollection}`);
           
           const updatedCollections = collections.filter(c => c.collectionId !== selectedCollection);
           setCollections(updatedCollections);
@@ -94,20 +77,18 @@ const CollectionsList = () => {
 
   const fetchUnassignedArtworks = useCallback(async () => {
     try {
-        const headers = getAuthHeader();
-        const res = await axios.get(`${API_URL}/api/artworks/user?unassigned=true`, { headers });
+        const res = await api.get(`/api/artworks/user?unassigned=true`);
         setUnassignedArtworks(res.data);
     } catch (err) {
         console.error("Failed to fetch unassigned artworks", err);
     }
-  }, [getAuthHeader]);
+  }, []);
 
   const handleAddArtworksToCollection = async () => {
       if (selectedArtworkIds.length === 0) return;
       setAddingArtworks(true);
       try {
-          const headers = getAuthHeader();
-          await axios.post(`${API_URL}/api/collections/${selectedCollection}/artworks`, selectedArtworkIds, { headers });
+          await api.post(`/api/collections/${selectedCollection}/artworks`, selectedArtworkIds);
           messageApi.success('Artworks added to collection.');
           setIsAddModalVisible(false);
           fetchArtworksForCollection(selectedCollection);
@@ -123,13 +104,7 @@ const CollectionsList = () => {
     const fetchInitialData = async () => {
       setLoading(true);
       try {
-        const headers = getAuthHeader();
-        if (!headers) {
-          navigate('/login');
-          return;
-        }
-
-        const res = await axios.get(`${API_URL}/api/collections`, { headers });
+        const res = await api.get(`/api/collections`);
         setCollections(res.data);
         
         // Check session storage for a previously selected collection
@@ -162,7 +137,7 @@ const CollectionsList = () => {
     };
 
     fetchInitialData();
-  }, [getAuthHeader, navigate, fetchArtworksForCollection]);
+  }, [navigate, fetchArtworksForCollection]);
 
   if (loading) {
     return (

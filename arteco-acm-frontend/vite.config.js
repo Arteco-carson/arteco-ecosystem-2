@@ -5,4 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/acm/',
   plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://arteco-fineartapi-prod-bxetekage3a2b6em.eastus2-01.azurewebsites.net',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })
