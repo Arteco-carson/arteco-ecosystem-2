@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Tooltip } from 'antd'; // <--- Added Tooltip import
+import { ConfigProvider, Tooltip } from 'antd';
 import { theme as appTheme } from '../config/theme';
 import { SendOutlined, AppstoreOutlined, GlobalOutlined, ShopOutlined, SafetyCertificateOutlined, RocketOutlined, LineChartOutlined } from '@ant-design/icons';
 import { LoginModal } from '@arteco/shared';
@@ -15,18 +15,43 @@ import logoImg from '../assets/White ARTECO logo.png';
 
 const LandingPage = () => {
   const brandBlue = appTheme.token.colorPrimary;
+  
+  // STATE
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-
-  // 2. SLIDESHOW CONFIGURATION
-  const heroImages = [hero1, hero2]; 
   const [heroIndex, setHeroIndex] = useState(0);
+  
+  // Search Animation State
+  const [searchActive, setSearchActive] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
 
+  const heroImages = [hero1, hero2]; 
+
+  // SLIDESHOW EFFECT
   useEffect(() => {
     const interval = setInterval(() => {
       setHeroIndex((prevIndex) => (prevIndex + 1) % heroImages.length);
     }, 5000); 
     return () => clearInterval(interval);
   }, [heroImages.length]);
+
+  // SEARCH HANDLER
+  const handleSearch = () => {
+    if (!question.trim()) return;
+
+    setSearchActive(true);
+
+    // Dummy Response - Deliberately long to trigger scrollbar
+    setTimeout(() => {
+      const dummyText = `Based on the parameters of your request regarding "${question}", here is the preliminary analysis found within the Arteco ecosystem:\n\n1. Market Context: The artist has seen a 12% increase in auction performance over the last 18 months, particularly in the European sector.\n\n2. Logistics: For a collection of this size, we recommend temperature-controlled consolidation points in Geneva or London before final transit.\n\n3. Conservation Data: Similar works from this period (Late 20th Century) often require specific humidity monitoring (45-55% RH). Our database flags 3 verified conservators in your region with this specific expertise.\n\n4. Documentation: Please ensure all provenance documents are digitized. Our system can automatically tag these against the new entries.\n\n5. Next Steps: Would you like to schedule a valuation with a partner appraiser, or proceed directly to logistics planning?\n\n(This is a generated placeholder response to demonstrate the scrollable text area capability. If the content exceeds the set height, a scrollbar will appear on the right side as requested.)\n\nAdditional filler text to ensure we hit the scroll limit:\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.`;
+      
+      setAiResponse(dummyText);
+    }, 1200); // Waits for the move-up animation to almost finish
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSearch();
+  };
 
   return (
     <ConfigProvider theme={appTheme}>
@@ -37,6 +62,7 @@ const LandingPage = () => {
 
         {/* HERO SECTION */}
         <div className="lp-hero-section">
+          {/* Left Column */}
           <div className="lp-hero-left">
             <img src={logoImg} alt="ARTECO" className="lp-logo-img" />
             
@@ -52,8 +78,10 @@ const LandingPage = () => {
             </div>
           </div>
 
+          {/* Right Column (Images & Search) */}
           <div className="lp-hero-right">
-             {/* Stacked Slideshow */}
+             
+             {/* Slideshow Background */}
              {heroImages.map((img, index) => (
                <div 
                  key={index}
@@ -62,14 +90,36 @@ const LandingPage = () => {
                />
              ))}
 
-             <div className="lp-search-container">
-               <input className="lp-search-input" placeholder="Ask a question..." />
-               <SendOutlined style={{ color: brandBlue, fontSize: '1.2rem', cursor: 'pointer' }} />
+             {/* Search Wrapper */}
+             <div className={`lp-search-wrapper ${searchActive ? 'active' : ''}`}>
+               
+               {/* Input Bar */}
+               <div className="lp-search-bar">
+                 <input 
+                   className="lp-search-input" 
+                   placeholder="Ask a question..." 
+                   value={question}
+                   onChange={(e) => setQuestion(e.target.value)}
+                   onKeyDown={handleKeyDown}
+                 />
+                 <SendOutlined 
+                   style={{ color: '#0D0060', fontSize: '1.2rem', cursor: 'pointer' }} 
+                   onClick={handleSearch}
+                 />
+               </div>
+
+               {/* Results Box (Fades In) */}
+               {searchActive && (
+                 <div className="lp-result-box">
+                   {aiResponse || "Analyzing request..."}
+                 </div>
+               )}
+
              </div>
           </div>
         </div>
 
-        {/* POWERFUL TOOLS SECTION (Tooltips Added Here) */}
+        {/* POWERFUL TOOLS SECTION */}
         <div className="lp-section-white">
           <h2 className="lp-h2">Powerful digital tools - enabling teams, streamlining processes</h2>
           <p className="lp-sub-h2">Your comprehensive directory for art industry services, connecting professionals across fine art moving, storage, conservation, and more.</p>

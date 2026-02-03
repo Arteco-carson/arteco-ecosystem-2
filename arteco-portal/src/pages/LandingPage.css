@@ -19,6 +19,7 @@
   width: 100%;
 }
 
+/* LEFT PANEL (Original Design Preserved) */
 .lp-hero-left {
   flex: 0 0 55%; 
   background-color: #0D0060;
@@ -28,13 +29,14 @@
   padding: 8% 15% 8% 6%; 
   box-sizing: border-box;
   position: relative;
+  z-index: 10;
 }
 
 /* THE SLIDESHOW STAGE */
 .lp-hero-right {
   flex: 1; 
-  position: relative; /* Acts as the frame */
-  overflow: hidden;   /* Crops anything spilling out */
+  position: relative; 
+  overflow: hidden;   
   background-color: #eee; 
 }
 
@@ -45,15 +47,15 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-size: cover;    /* Forces image to fill the frame */
+  background-size: cover;    
   background-position: center;
-  opacity: 0;                /* Hidden by default */
-  transition: opacity 1.5s ease-in-out; /* Smooth fade */
+  opacity: 0;                
+  transition: opacity 1.5s ease-in-out; 
   z-index: 1;
 }
 
 .lp-slide-layer.active {
-  opacity: 1; /* Visible */
+  opacity: 1; 
   z-index: 2;
 }
 
@@ -68,7 +70,7 @@
 /* Typography */
 .lp-hero-heading {
   color: #96AAEF;
-  font-size: 2rem; /* ~25pt */
+  font-size: 2rem; 
   line-height: 1.2;
   font-weight: 700;
   margin-bottom: 1rem;
@@ -83,18 +85,34 @@
 
 .lp-hero-subtext {
   color: #F9FCFF;
-  font-size: 1.6rem; /* ~20pt */
+  font-size: 1.6rem; 
   line-height: 1.4;
   font-weight: 300;
 }
 
-/* The LLM Search Bar */
-.lp-search-container {
+/* --- SEARCH ANIMATION LOGIC --- */
+
+/* The Wrapper handles the positioning and movement */
+.lp-search-wrapper {
   position: absolute;
+  /* STARTING POSITION: Center of image area */
   top: 40%;
   left: 50%;
   transform: translateX(-50%);
   width: 70%;
+  z-index: 20;
+  
+  /* DRAMA: Slow, smooth movement (1.5s) */
+  transition: top 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ACTIVE STATE: Move Up to 15% */
+.lp-search-wrapper.active {
+  top: 15%; 
+}
+
+/* The Input Bar (Visual Styling) */
+.lp-search-bar {
   background: white;
   border-radius: 50px;
   border: 2px solid #0D0060; 
@@ -103,7 +121,14 @@
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  z-index: 10; /* Sits on top of images */
+  width: 100%;
+  box-sizing: border-box; 
+  transition: all 0.3s;
+}
+
+.lp-search-bar:hover {
+  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+  transform: translateY(-2px);
 }
 
 .lp-search-input {
@@ -113,6 +138,45 @@
   color: #666;
   width: 100%;
   font-family: 'Lato', sans-serif;
+  background: transparent;
+}
+
+/* RESULT BOX (The Fade In) */
+.lp-result-box {
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.95); 
+  border: 1px solid #0D0060; 
+  border-radius: 20px; 
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  
+  font-family: 'Lato', sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap; 
+  
+  /* Animation Config */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 1.5s ease forwards; /* Slow Fade */
+  animation-delay: 1.0s; /* Wait for the move up */
+  
+  /* Scrolling Logic: Reduced to 500px */
+  max-height: 500px; 
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.lp-result-box::-webkit-scrollbar { width: 8px; }
+.lp-result-box::-webkit-scrollbar-track { background: transparent; }
+.lp-result-box::-webkit-scrollbar-thumb { background: rgba(13, 0, 96, 0.2); border-radius: 4px; }
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- SECTIONS: SHARED --- */
@@ -250,7 +314,7 @@
 @media (max-width: 768px) {
   .lp-hero-section { flex-direction: column; }
   .lp-hero-left { flex: auto; padding: 40px 20px; }
-  .lp-hero-right { height: 300px; }
+  .lp-hero-right { height: 60vh; }
   
   .lp-hero-heading { font-size: 1.8rem; }
   .lp-hero-subtext { font-size: 1.3rem; }
@@ -260,7 +324,7 @@
   .lp-split-section { flex-direction: column; }
   .lp-insights-container { flex-direction: column; }
   
-  .lp-search-container { width: 90%; }
+  .lp-search-wrapper { width: 90%; }
   
   .lp-section-white { padding: 40px 20px; }
 }
