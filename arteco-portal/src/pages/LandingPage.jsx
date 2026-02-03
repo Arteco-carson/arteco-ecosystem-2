@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, Tooltip } from 'antd'; // <--- Added Tooltip import
 import { theme as appTheme } from '../config/theme';
 import { SendOutlined, AppstoreOutlined, GlobalOutlined, ShopOutlined, SafetyCertificateOutlined, RocketOutlined, LineChartOutlined } from '@ant-design/icons';
 import { LoginModal } from '@arteco/shared';
@@ -32,7 +32,7 @@ const LandingPage = () => {
     <ConfigProvider theme={appTheme}>
       <div className="lp-container">
         
-        {/* NAVIGATION BAR - Passing the Login Trigger */}
+        {/* NAVIGATION BAR */}
         <Navbar onLoginClick={() => setIsLoginOpen(true)} />
 
         {/* HERO SECTION */}
@@ -69,44 +69,61 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* POWERFUL TOOLS SECTION */}
+        {/* POWERFUL TOOLS SECTION (Tooltips Added Here) */}
         <div className="lp-section-white">
           <h2 className="lp-h2">Powerful digital tools - enabling teams, streamlining processes</h2>
           <p className="lp-sub-h2">Your comprehensive directory for art industry services, connecting professionals across fine art moving, storage, conservation, and more.</p>
           
           <div className="lp-grid-6">
              <div className="lp-tool-card">
-                <AppstoreOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <Tooltip title="A centralized, digital command center for galleries, dealers and collectors..." color={brandBlue}>
+                  <AppstoreOutlined style={{ fontSize: '24px', color: brandBlue, cursor: 'pointer' }} />
+                </Tooltip>
                 <h4>COLLECTION MANAGEMENT</h4>
                 <p>A centralized, digital command center for galleries, dealers and collectors that records every item’s lifecycle — from acquisition through loan, exhibition and sale — enabling coordinated operations across the entire Arteco-System.</p>
                 <a href="#" className="lp-link">Learn more</a>
              </div>
+             
              <div className="lp-tool-card">
-                <SafetyCertificateOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <Tooltip title="A standardized, auditable condition reporting tool that digitizes inspections..." color={brandBlue}>
+                  <SafetyCertificateOutlined style={{ fontSize: '24px', color: brandBlue, cursor: 'pointer' }} />
+                </Tooltip>
                 <h4>CONDITION REPORTING</h4>
                 <p>A standardized, auditable condition reporting tool that digitizes inspections and restoration logs so conservation data travels with the asset and informs valuation, insurance and shipping decisions across Arteco.</p>
                 <a href="#" className="lp-link">Learn more</a>
              </div>
+
              <div className="lp-tool-card">
-                <RocketOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <Tooltip title="An intelligent shipping module that automates logistics for artwork movement..." color={brandBlue}>
+                  <RocketOutlined style={{ fontSize: '24px', color: brandBlue, cursor: 'pointer' }} />
+                </Tooltip>
                 <h4>SERVICE PROVIDER ERP</h4>
                 <p>An intelligent shipping module that automates logistics for artwork movement by linking item specs, condition data, insurance and customs requirements to carrier and route selection.</p>
                 <a href="#" className="lp-link">Learn more</a>
              </div>
+
              <div className="lp-tool-card">
-                <GlobalOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <Tooltip title="A curated, verifiable directory of galleries, conservators, shippers..." color={brandBlue}>
+                  <GlobalOutlined style={{ fontSize: '24px', color: brandBlue, cursor: 'pointer' }} />
+                </Tooltip>
                 <h4>GLOBAL DIRECTORY</h4>
                 <p>A curated, verifiable directory of galleries, conservators, shippers, framers and other art service professionals that fosters trust and efficient talent sourcing across the Arteco platform.</p>
                 <a href="#" className="lp-link">Learn more</a>
              </div>
+
              <div className="lp-tool-card">
-                <ShopOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <Tooltip title="A standardized, auditable condition reporting tool that digitizes inspections..." color={brandBlue}>
+                  <ShopOutlined style={{ fontSize: '24px', color: brandBlue, cursor: 'pointer' }} />
+                </Tooltip>
                 <h4>MARKET PLACE</h4>
                 <p>A standardized, auditable condition reporting tool that digitizes inspections and restoration logs so conservation data travels with the asset and informs valuation, insurance and shipping decisions across Arteco.</p>
                 <a href="#" className="lp-link">Learn more</a>
              </div>
+
              <div className="lp-tool-card">
-                <LineChartOutlined style={{ fontSize: '24px', color: brandBlue }} />
+                <Tooltip title="An intelligent shipping module that automates logistics for artwork movement..." color={brandBlue}>
+                  <LineChartOutlined style={{ fontSize: '24px', color: brandBlue, cursor: 'pointer' }} />
+                </Tooltip>
                 <h4>SMART INTEGRATIONS</h4>
                 <p>An intelligent shipping module that automates logistics for artwork movement by linking item specs, condition data, insurance and customs requirements to carrier and route selection.</p>
                 <a href="#" className="lp-link">Learn more</a>
