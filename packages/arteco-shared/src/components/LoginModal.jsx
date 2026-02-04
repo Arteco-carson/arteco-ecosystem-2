@@ -21,7 +21,13 @@ export const LoginModal = ({ open, onClose }) => {
 
   const onFinish = async (values) => {
     setLoading(true);
-    const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
+
+    // --- CONSTRUCT API URL ---
+    // Uses the environment variable if available (Production), otherwise falls back to relative path (Localhost Proxy)
+    const apiBase = import.meta.env.VITE_API_URL || '';
+    const endpoint = isRegister 
+      ? `${apiBase}/api/auth/register` 
+      : `${apiBase}/api/auth/login`;
 
     // Prepare Payload
     let payload = { ...values };
@@ -30,8 +36,8 @@ export const LoginModal = ({ open, onClose }) => {
     if (isRegister) {
       payload = {
         ...payload,
-        roleId: 2,         // 2 = Standard User (Guessing). If fails, try 1 or 3.
-        userTypeId: 1,     // 1 = Standard Type (Guessing).
+        roleId: 2,         // 2 = Standard User/Customer
+        userTypeId: 1,     // 1 = Standard Type
         marketingConsent: true
       };
     }
