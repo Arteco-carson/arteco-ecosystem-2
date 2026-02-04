@@ -1,37 +1,83 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Button, message, Typography } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Button, message, Typography, Row, Col } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined, IdcardOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
-const { Text } = Typography;
+const { Text, Link } = Typography;
 
 export const LoginModal = ({ open, onClose }) => {
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [isRegister, setIsRegister] = useState(false); // Toggle state
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
 
+  // Reset form when switching modes
+  const toggleMode = () => {
+    setIsRegister(!isRegister);
+    form.resetFields();
+  };
+
   const onFinish = async (values) => {
     setLoading(true);
+    const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
+
+    // Prepare Payload
+    let payload = { ...values };
+    
+    // INJECT REQUIRED DEFAULTS FOR REGISTRATION
+    if (isRegister) {
+      payload = {
+        ...payload,
+        roleId: 2,         // 2 = Standard User (Guessing). If fails, try 1 or 3.
+        userTypeId: 1,     // 1 = Standard Type (Guessing).
+        marketingConsent: true
+      };
+    }
 
     try {
-      const response = await axios.post(
-        '/api/auth/login',
-        values
-      );
+      const response = await axios.post(endpoint, payload);
 
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        messageApi.success('Welcome back!');
-        login(response.data.token);
-        onClose();
+      if (isRegister) {
+        // --- REGISTRATION SUCCESS ---
+        messageApi.success('Account created! Please sign in.');
+        
+        // If API sends a token immediately, log in. 
+        // If not, switch to login view and pre-fill username.
+        if (response.data.token) {
+           localStorage.setItem('token', response.data.token);
+           login(response.data.token);
+           onClose();
+        } else {
+           setIsRegister(false);
+           // Pre-fill the username they just created so they don't have to retype it
+           form.setFieldsValue({ username: values.username }); 
+        }
+
       } else {
-        messageApi.error('Login failed: No token received.');
+        // --- LOGIN SUCCESS ---
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+          messageApi.success('Welcome back!');
+          login(response.data.token);
+          onClose();
+        } else {
+          messageApi.error('Login failed: No token received.');
+        }
       }
+
     } catch (error) {
-      console.error('Login error:', error);
-      messageApi.error('Login Failed. Please check your credentials.');
+      console.error('Auth error:', error);
+      // specific error message from Azure API
+      const errorMsg = error.response?.data?.message || error.response?.data;
+      
+      // Handle "Duplicate" or "Validation" errors nicely
+      if (typeof errorMsg === 'string' && errorMsg.includes("taken")) {
+         messageApi.error("That username is already taken.");
+      } else {
+         messageApi.error(typeof errorMsg === 'string' ? errorMsg : 'Authentication failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -42,7 +88,7 @@ export const LoginModal = ({ open, onClose }) => {
       {contextHolder}
       <Modal
         open={open}
-        title="Sign In to Arteco"
+        title={isRegister ? "Create Arteco Account" : "Sign In to Arteco"}
         onCancel={onClose}
         footer={null}
         destroyOnClose
@@ -51,17 +97,52 @@ export const LoginModal = ({ open, onClose }) => {
       >
         <Form
           form={form}
-          name="login_modal"
+          name="auth_modal"
           layout="vertical"
           onFinish={onFinish}
           style={{ marginTop: 20 }}
         >
-          {/* We can leave validation on to make it feel real, or remove 'required' to be lazy */}
+          {/* --- REGISTRATION ONLY FIELDS --- */}
+          {isRegister && (
+            <>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="firstName"
+                    rules={[{ required: true, message: 'Required' }]}
+                  >
+                    <Input prefix={<IdcardOutlined />} placeholder="First Name" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="lastName"
+                    rules={[{ required: true, message: 'Required' }]}
+                  >
+                    <Input prefix={<IdcardOutlined />} placeholder="Last Name" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item
+                name="email"
+                rules={[
+                  { required: true, message: 'Please enter your email' },
+                  { type: 'email', message: 'Invalid email format' }
+                ]}
+              >
+                <Input prefix={<MailOutlined />} placeholder="Email Address" size="large" />
+              </Form.Item>
+            </>
+          )}
+
+          {/* --- SHARED FIELDS --- */}
           <Form.Item
             name="username"
-            rules={[{ required: true, message: 'Please enter your username' }]}
+            label={isRegister ? "Choose a Username" : null}
+            rules={[{ required: true, message: 'Please enter a username' }]}
           >
-            <Input prefix={<UserOutlined />} placeholder="Enter your username (e.g. Irishspurs)" size="large" />
+            <Input prefix={<UserOutlined />} placeholder="Username" size="large" />
           </Form.Item>
 
           <Form.Item
@@ -71,17 +152,23 @@ export const LoginModal = ({ open, onClose }) => {
             <Input.Password prefix={<LockOutlined />} placeholder="Password" size="large" />
           </Form.Item>
 
-          <Form.Item>
+          {/* --- ACTION BUTTON --- */}
+          <Form.Item style={{ marginBottom: 10 }}>
             <Button type="primary" htmlType="submit" block size="large" loading={loading}>
-              Sign In
+              {isRegister ? "Create Account" : "Sign In"}
             </Button>
           </Form.Item>
           
+          {/* --- TOGGLE --- */}
           <div style={{ textAlign: 'center' }}>
-             <Text type="secondary" style={{ fontSize: '12px' }}>
-                Secure Login
+             <Text type="secondary">
+               {isRegister ? "Already have an account? " : "Don't have an account? "}
              </Text>
+             <Link onClick={toggleMode} style={{ fontWeight: 'bold' }}>
+               {isRegister ? "Sign In" : "Register Now"}
+             </Link>
           </div>
+
         </Form>
       </Modal>
     </>
