@@ -46,6 +46,11 @@ namespace FineArtApi.Models
         [ForeignKey("UserTypeId")]
         public virtual UserType? UserType { get; set; }
 
+        public int? UserSubTypeId { get; set; }
+
+        [ForeignKey("UserSubTypeId")]
+        public virtual UserSubType? UserSubType { get; set; }
+
         [StringLength(3)]
         public string? CurrencyCode { get; set; }
 

@@ -150,6 +150,34 @@ namespace FineArtApi.Controllers
                 })
                 .ToListAsync();
         }
+
+        [HttpPut("current")]
+        public async Task<IActionResult> UpdateCurrentUser([FromBody] UserProfile updatedProfile)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int profileId))
+            {
+                return Unauthorized(new { message = "Security Identity missing or invalid." });
+            }
+
+            var user = await _context.UserProfiles.FindAsync(profileId);
+            if (user == null) return NotFound();
+
+            // Snapshot old state
+            var oldState = new { user.FirstName, user.LastName, user.TelephoneNumber, user.UserTypeId, user.UserSubTypeId };
+
+            user.FirstName = updatedProfile.FirstName;
+            user.LastName = updatedProfile.LastName;
+            user.TelephoneNumber = updatedProfile.TelephoneNumber;
+            user.UserTypeId = updatedProfile.UserTypeId;
+            user.UserSubTypeId = updatedProfile.UserSubTypeId;
+
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync("UserProfiles", profileId, "UPDATE", profileId, oldState, updatedProfile);
+
+            return Ok(user);
+        }
     }
 
     public class UserProfileUpdateDto

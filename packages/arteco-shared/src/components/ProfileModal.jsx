@@ -38,7 +38,7 @@ export const ProfileModal = ({ open, onClose }) => {
             axios.get(`${apiBase}/api/UserSubTypes`),
             // Note: If you haven't built a specific '/me' endpoint, we might need to fetch by ID. 
             // For now, we assume the backend supports getting the current user's profile via the token.
-            axios.get(`${apiBase}/api/UserProfile/current`) 
+            axios.get(`${apiBase}/api/User/current`) 
         ]);
 
         setTypes(typeRes.data);
@@ -90,7 +90,7 @@ export const ProfileModal = ({ open, onClose }) => {
           emailAddress: values.email 
       };
 
-      await axios.put(`${apiBase}/api/UserProfile/current`, payload);
+      await axios.put(`${apiBase}/api/User/current`, payload);
       
       messageApi.success('Profile updated successfully');
       

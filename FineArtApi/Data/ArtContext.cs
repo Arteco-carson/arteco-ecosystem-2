@@ -24,6 +24,7 @@ namespace FineArtApi.Data
         public DbSet<UserLocation> UserLocations { get; set; } = null!;
         public DbSet<UserRole> UserRoles { get; set; } = null!;
         public DbSet<UserType> UserTypes { get; set; } = null!;
+        public DbSet<UserSubType> UserSubTypes { get; set; } = null!;
         public DbSet<DefectReport> DefectReports { get; set; } = null!;
         public DbSet<DefectImage> DefectImages { get; set; } = null!;
         public DbSet<DefectConversation> DefectConversations { get; set; } = null!;
