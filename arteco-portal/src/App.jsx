@@ -15,12 +15,20 @@ const { useToken } = theme;
 // --- 1.1 DASHBOARD CONTENT (Uses Token) ---
 const DashboardContent = ({ omniboxResult, acmUrl, onOmniboxResult }) => {
   const { token } = useToken();
+  const { user } = useAuth(); // <--- Access the live user data
+
+  // Dynamic Name Logic
+  const displayName = user?.firstName || user?.username || 'User';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', paddingTop: '60px' }}>
+    // UPDATED: paddingTop reduced from 60px to 30px to halve the space
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', paddingTop: '30px' }}>
       
       <div style={{ textAlign: 'center', marginBottom: 60, width: '100%', maxWidth: 800 }}>
-         <Title level={1} style={{ fontSize: '48px', marginBottom: '16px', color: '#1f1f1f' }}>Welcome back, Ian</Title>
+         {/* UPDATED: Dynamic Name and marginTop: 0 */}
+         <Title level={1} style={{ fontSize: '48px', marginBottom: '16px', color: '#1f1f1f', marginTop: 0 }}>
+            Welcome back, {displayName}
+         </Title>
          <Text type="secondary" style={{ fontSize: '24px' }}>The unified ecosystem for art collection management.</Text>
          
          <div style={{ marginTop: '40px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -71,8 +79,6 @@ const PrivateDashboard = () => {
   const [omniboxResult, setOmniboxResult] = useState(null);
 
   // DEPLOYMENT SAFE LOGIC:
-  // In Azure (Production), this compiles strictly to '/acm/'.
-  // On your Laptop (Dev), it points to the local ACM port including the sub-path.
   const acmUrl = import.meta.env.DEV 
     ? 'http://localhost:5174/acm/' 
     : '/acm/';

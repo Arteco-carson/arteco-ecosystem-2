@@ -152,7 +152,7 @@ namespace FineArtApi.Controllers
         }
 
         [HttpPut("current")]
-        public async Task<IActionResult> UpdateCurrentUser([FromBody] UserProfile updatedProfile)
+        public async Task<IActionResult> UpdateCurrentUser([FromBody] UpdateProfileRequest request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int profileId))
@@ -166,15 +166,15 @@ namespace FineArtApi.Controllers
             // Snapshot old state
             var oldState = new { user.FirstName, user.LastName, user.TelephoneNumber, user.UserTypeId, user.UserSubTypeId };
 
-            user.FirstName = updatedProfile.FirstName;
-            user.LastName = updatedProfile.LastName;
-            user.TelephoneNumber = updatedProfile.TelephoneNumber;
-            user.UserTypeId = updatedProfile.UserTypeId;
-            user.UserSubTypeId = updatedProfile.UserSubTypeId;
+            user.FirstName = request.FirstName;
+            user.LastName = request.LastName;
+            user.TelephoneNumber = request.TelephoneNumber;
+            user.UserTypeId = request.UserTypeId;
+            user.UserSubTypeId = request.UserSubTypeId;
 
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync("UserProfiles", profileId, "UPDATE", profileId, oldState, updatedProfile);
+            await _auditService.LogAsync("UserProfiles", profileId, "UPDATE", profileId, oldState, request);
 
             return Ok(user);
         }
