@@ -1,15 +1,28 @@
-import React from 'react';
-import { Layout, Avatar, Button, Dropdown, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Avatar, Button, Dropdown } from 'antd';
 import { UserOutlined, LogoutOutlined, SettingOutlined, DownOutlined } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
+import { LoginModal } from './LoginModal';
+import { ProfileModal } from './ProfileModal';
 
-// Define tokens locally or import them
 const ARTECO_DEEP_BLUE = '#0D0060';
-
 const { Header, Content } = Layout;
 
 export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], fullWidth = false, logoSrc }) => {
-  const { logout, user } = useAuth();
+  const { logout, user, isAuthenticated } = useAuth();
+  
+  // --- STATE FOR MODALS ---
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  
+  // --- FAILSAFE LOGIC ---
+  // If AuthContext is slow or 'user' is null after refresh, check localStorage directly.
+  // This prevents the UI from incorrectly flipping to "Sign In".
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('token');
+  const isReallyLoggedIn = isAuthenticated || (user !== null) || hasToken;
+
+  // Determine Display Name (Fallback to 'Member' if user details haven't loaded yet)
+  const displayName = user?.firstName || user?.username || 'Member';
 
   // The Dropdown Menu for the User Profile
   const userMenuArgs = {
@@ -18,6 +31,7 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
         key: 'profile',
         label: 'My Profile',
         icon: <UserOutlined />,
+        onClick: () => setProfileOpen(true),
       },
       {
         key: 'settings',
@@ -32,9 +46,7 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
         label: 'Sign Out',
         icon: <LogoutOutlined />,
         danger: true,
-        onClick: () => {
-             logout(); // <--- This triggers the logout and redirects to Landing Page
-        },
+        onClick: () => logout(),
       },
     ]
   };
@@ -49,12 +61,12 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
           width: '100%',
           height: '64px',
           padding: '0 24px',
-          backgroundColor: ARTECO_DEEP_BLUE, // Updated to Deep Blue
+          backgroundColor: ARTECO_DEEP_BLUE, 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '24px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)' // Added subtle shadow for depth
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)' 
         }}
       >
         {/* Left: Brand Text */}
@@ -74,7 +86,7 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
               whiteSpace: 'nowrap',
               cursor: 'pointer'
             }}
-            onClick={() => window.location.href = '/'} // Clicking title goes home
+            onClick={() => window.location.href = '/'}
           >
             {title}
           </span>
@@ -83,7 +95,7 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
         {/* Center: Spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* Right: Navigation Items (Optional) */}
+        {/* Right: Navigation Items */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '24px' }}>
           {navItems.map((item) => (
             <Button
@@ -98,18 +110,23 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
           ))}
         </div>
 
-        {/* Right: User Profile with Dropdown */}
-        <Dropdown menu={userMenuArgs} trigger={['click']}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '4px 12px', borderRadius: '4px', transition: 'background 0.3s' }} className="user-dropdown-trigger">
-                {/* We use user?.username but fallback to 'Ian' for now */}
-                <span style={{ color: '#ffffff', fontWeight: 500 }}>{user?.username || 'Ian'}</span>
-                <Avatar 
-                    icon={<UserOutlined style={{ color: ARTECO_DEEP_BLUE }} />} 
-                    style={{ backgroundColor: '#ffffff', color: ARTECO_DEEP_BLUE }} 
-                />
-                <DownOutlined style={{ color: '#FFFFFF', fontSize: '12px' }} />
-            </div>
-        </Dropdown>
+        {/* Right: User Profile or Sign In */}
+        {isReallyLoggedIn ? (
+            <Dropdown menu={userMenuArgs} trigger={['click']}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '4px 12px', borderRadius: '4px', transition: 'background 0.3s' }} className="user-dropdown-trigger">
+                    <span style={{ color: '#ffffff', fontWeight: 500 }}>{displayName}</span>
+                    <Avatar 
+                        icon={<UserOutlined style={{ color: ARTECO_DEEP_BLUE }} />} 
+                        style={{ backgroundColor: '#ffffff', color: ARTECO_DEEP_BLUE }} 
+                    />
+                    <DownOutlined style={{ color: '#FFFFFF', fontSize: '12px' }} />
+                </div>
+            </Dropdown>
+        ) : (
+             <Button type="primary" onClick={() => setLoginOpen(true)}>
+               Sign In
+             </Button>
+        )}
       </Header>
 
       <Content
@@ -123,9 +140,16 @@ export const ArtecoShell = ({ children, title = "Arteco Portal", navItems = [], 
       >
         {children}
       </Content>
+
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      <ProfileModal 
+         open={profileOpen} 
+         onClose={() => setProfileOpen(false)} 
+         user={user} 
+      />
+
     </Layout>
   );
 };
 
-// Default export if you prefer imports without brackets
 export default ArtecoShell;

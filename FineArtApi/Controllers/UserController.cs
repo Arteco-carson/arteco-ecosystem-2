@@ -59,6 +59,30 @@ namespace FineArtApi.Controllers
             });
         }
 
+        [HttpGet("current")]
+        public async Task<ActionResult<UserProfile>> GetCurrentUserProfile()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id");
+
+            if (userIdClaim == null)
+                return Unauthorized(new { message = "Security Identity claim missing from token." });
+
+            if (!int.TryParse(userIdClaim.Value, out int profileId))
+            {
+                return BadRequest(new { message = "Invalid Profile Identity format." });
+            }
+
+            var user = await _context.UserProfiles
+                .Include(u => u.Role)
+                .Include(u => u.UserType)
+                .Include(u => u.Currency)
+                .FirstOrDefaultAsync(u => u.ProfileId == profileId);
+
+            if (user == null) return NotFound();
+
+            return Ok(user);
+        }
+
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UserProfileUpdateDto updateDto)
         {
