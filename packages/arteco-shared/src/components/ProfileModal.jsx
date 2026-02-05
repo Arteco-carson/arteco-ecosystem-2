@@ -8,7 +8,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export const ProfileModal = ({ open, onClose }) => {
-  const { user, login } = useAuth(); // We need 'login' to update the local user state after save
+  const { user, login } = useAuth(); 
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   
@@ -31,14 +31,15 @@ export const ProfileModal = ({ open, onClose }) => {
   const loadFullProfile = async () => {
     setDataLoading(true);
     try {
-        // 1. Parallel Fetch: Get Types, SubTypes, and the Fresh User Profile
-        // We use the '/me' convention or fallback to user ID if your API requires it
+        // --- AUTH CONFIG ---
+        const token = localStorage.getItem('token');
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+
+        // 1. Parallel Fetch with Headers
         const [typeRes, subTypeRes, profileRes] = await Promise.all([
-            axios.get(`${apiBase}/api/UserTypes`),
-            axios.get(`${apiBase}/api/UserSubTypes`),
-            // Note: If you haven't built a specific '/me' endpoint, we might need to fetch by ID. 
-            // For now, we assume the backend supports getting the current user's profile via the token.
-            axios.get(`${apiBase}/api/User/current`) 
+            axios.get(`${apiBase}/api/UserTypes`, config),
+            axios.get(`${apiBase}/api/UserSubTypes`, config),
+            axios.get(`${apiBase}/api/User/current`, config) 
         ]);
 
         setTypes(typeRes.data);
@@ -46,10 +47,10 @@ export const ProfileModal = ({ open, onClose }) => {
 
         const userData = profileRes.data;
 
-        // 2. Hydrate Form (Explicit Mapping)
+        // 2. Hydrate Form
         form.setFieldsValue({
             username: userData.username,
-            email: userData.emailAddress, // SCHEMA MAPPING: emailAddress -> email
+            email: userData.emailAddress, 
             firstName: userData.firstName,
             lastName: userData.lastName,
             telephoneNumber: userData.telephoneNumber,
@@ -57,7 +58,7 @@ export const ProfileModal = ({ open, onClose }) => {
             userSubTypeId: userData.userSubTypeId
         });
 
-        // 3. Filter SubTypes immediately based on the fetched Type
+        // 3. Filter SubTypes immediately
         if (userData.userTypeId) {
             const filtered = subTypeRes.data.filter(s => s.userTypeId === userData.userTypeId);
             setAvailableSubTypes(filtered);
@@ -65,7 +66,6 @@ export const ProfileModal = ({ open, onClose }) => {
 
     } catch (error) {
         console.error("Failed to load profile", error);
-        // Fallback: Use the 'user' prop from context if API fails
         if (user) {
             form.setFieldsValue(user);
         }
@@ -83,24 +83,20 @@ export const ProfileModal = ({ open, onClose }) => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      // 1. Send Update to Backend
-      // Map 'email' back to 'emailAddress' for the DTO
+      // --- AUTH CONFIG ---
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
       const payload = {
           ...values,
           emailAddress: values.email 
       };
 
-      await axios.put(`${apiBase}/api/User/current`, payload);
+      await axios.put(`${apiBase}/api/User/current`, payload, config);
       
       messageApi.success('Profile updated successfully');
       
-      // 2. CRITICAL: Update Local Context so the Header Name changes instantly
-      // We re-login with the same token but force a user refresh (simplest way)
-      // Or manually update the user object if your AuthContext supports it.
-      // For now, we rely on the next page refresh or explicit context update.
-      
       onClose();
-      // Optional: window.location.reload(); // To force header update if Context is rigid
     } catch (error) {
       console.error(error);
       messageApi.error('Failed to update profile');
