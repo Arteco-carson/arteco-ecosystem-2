@@ -56,7 +56,8 @@ export const ProfileModal = ({ open, onClose }) => {
         setSubTypes(subTypesRes.data);
 
         // 2. Load User Profile
-        const profileRes = await axios.get(`${apiBase}/api/UserController/profile`, config);
+        // URL FIX: Changed 'UserController' to 'User' to match backend [controller] route
+        const profileRes = await axios.get(`${apiBase}/api/User/profile`, config);
         const profile = profileRes.data;
 
         // 3. Set Form Values
@@ -64,10 +65,9 @@ export const ProfileModal = ({ open, onClose }) => {
             firstName: profile.firstName,
             lastName: profile.lastName,
             telephoneNumber: profile.telephoneNumber,
-            emailAddress: profile.emailAddress, // Read only usually
+            emailAddress: profile.emailAddress, 
             userTypeId: profile.userTypeId,
             userSubTypeId: profile.userSubTypeId,
-            // NEW: Load Language or Default
             preferredLanguage: profile.preferredLanguage || 'en-GB'
         });
 
@@ -89,7 +89,7 @@ export const ProfileModal = ({ open, onClose }) => {
     // Filter subtypes when type changes
     const filtered = subTypes.filter(st => st.userTypeId === value);
     setAvailableSubTypes(filtered);
-    form.setFieldsValue({ userSubTypeId: null }); // Reset subtype
+    form.setFieldsValue({ userSubTypeId: null }); 
   };
 
   const handleSubmit = async (values) => {
@@ -98,7 +98,7 @@ export const ProfileModal = ({ open, onClose }) => {
         const token = localStorage.getItem('token');
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        // Send Update (Payload matches UpdateProfileRequest.cs)
+        // Send Update 
         const payload = {
             firstName: values.firstName,
             lastName: values.lastName,
@@ -108,7 +108,8 @@ export const ProfileModal = ({ open, onClose }) => {
             preferredLanguage: values.preferredLanguage 
         };
 
-        const response = await axios.put(`${apiBase}/api/UserController/current`, payload, config);
+        // URL FIX: Changed 'UserController' to 'User'
+        const response = await axios.put(`${apiBase}/api/User/current`, payload, config);
 
         // Update Context
         login(response.data, token); 
@@ -162,7 +163,6 @@ export const ProfileModal = ({ open, onClose }) => {
                      <Form.Item name="telephoneNumber" label="Phone" style={{ flex: 1 }}>
                         <Input prefix={<PhoneOutlined />} placeholder="+44..." /> 
                      </Form.Item>
-                     {/* NEW LANGUAGE FIELD */}
                      <Form.Item name="preferredLanguage" label="Language" style={{ flex: 1 }}>
                         <Select showSearch options={languageOptions} placeholder="Select Language" />
                      </Form.Item>
