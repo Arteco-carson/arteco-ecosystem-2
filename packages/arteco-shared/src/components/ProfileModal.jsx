@@ -7,6 +7,17 @@ import { useAuth } from '../context/AuthContext';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+// Standard ISO Language Codes
+const languageOptions = [
+    { label: 'English (UK)', value: 'en-GB' },
+    { label: 'English (US)', value: 'en-US' },
+    { label: 'French', value: 'fr-FR' },
+    { label: 'Spanish', value: 'es-ES' },
+    { label: 'German', value: 'de-DE' },
+    { label: 'Italian', value: 'it-IT' },
+    { label: 'Chinese (Simplified)', value: 'zh-CN' },
+];
+
 export const ProfileModal = ({ open, onClose }) => {
   const { user, login } = useAuth(); 
   const [loading, setLoading] = useState(false);
@@ -35,73 +46,80 @@ export const ProfileModal = ({ open, onClose }) => {
         const token = localStorage.getItem('token');
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        // 1. Parallel Fetch with Headers
-        const [typeRes, subTypeRes, profileRes] = await Promise.all([
+        // 1. Load Reference Data
+        const [typesRes, subTypesRes] = await Promise.all([
             axios.get(`${apiBase}/api/UserTypes`, config),
-            axios.get(`${apiBase}/api/UserSubTypes`, config),
-            axios.get(`${apiBase}/api/User/current`, config) 
+            axios.get(`${apiBase}/api/UserSubTypes`, config)
         ]);
 
-        setTypes(typeRes.data);
-        setSubTypes(subTypeRes.data);
+        setTypes(typesRes.data);
+        setSubTypes(subTypesRes.data);
 
-        const userData = profileRes.data;
+        // 2. Load User Profile
+        const profileRes = await axios.get(`${apiBase}/api/UserController/profile`, config);
+        const profile = profileRes.data;
 
-        // 2. Hydrate Form
+        // 3. Set Form Values
         form.setFieldsValue({
-            username: userData.username,
-            email: userData.emailAddress, 
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            telephoneNumber: userData.telephoneNumber,
-            userTypeId: userData.userTypeId,
-            userSubTypeId: userData.userSubTypeId
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            telephoneNumber: profile.telephoneNumber,
+            emailAddress: profile.emailAddress, // Read only usually
+            userTypeId: profile.userTypeId,
+            userSubTypeId: profile.userSubTypeId,
+            // NEW: Load Language or Default
+            preferredLanguage: profile.preferredLanguage || 'en-GB'
         });
 
-        // 3. Filter SubTypes immediately
-        if (userData.userTypeId) {
-            const filtered = subTypeRes.data.filter(s => s.userTypeId === userData.userTypeId);
+        // Trigger subtype filter logic based on loaded type
+        if (profile.userTypeId) {
+            const filtered = subTypesRes.data.filter(st => st.userTypeId === profile.userTypeId);
             setAvailableSubTypes(filtered);
         }
 
     } catch (error) {
-        console.error("Failed to load profile", error);
-        if (user) {
-            form.setFieldsValue(user);
-        }
+        console.error("Profile load error", error);
+        messageApi.error("Failed to load profile data");
     } finally {
         setDataLoading(false);
     }
   };
 
   const handleTypeChange = (value) => {
-      const filtered = subTypes.filter(s => s.userTypeId === value);
-      setAvailableSubTypes(filtered);
-      form.setFieldsValue({ userSubTypeId: null });
+    // Filter subtypes when type changes
+    const filtered = subTypes.filter(st => st.userTypeId === value);
+    setAvailableSubTypes(filtered);
+    form.setFieldsValue({ userSubTypeId: null }); // Reset subtype
   };
 
-  const onFinish = async (values) => {
+  const handleSubmit = async (values) => {
     setLoading(true);
     try {
-      // --- AUTH CONFIG ---
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
+        const token = localStorage.getItem('token');
+        const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const payload = {
-          ...values,
-          emailAddress: values.email 
-      };
+        // Send Update (Payload matches UpdateProfileRequest.cs)
+        const payload = {
+            firstName: values.firstName,
+            lastName: values.lastName,
+            telephoneNumber: values.telephoneNumber,
+            userTypeId: values.userTypeId,
+            userSubTypeId: values.userSubTypeId,
+            preferredLanguage: values.preferredLanguage 
+        };
 
-      await axios.put(`${apiBase}/api/User/current`, payload, config);
-      
-      messageApi.success('Profile updated successfully');
-      
-      onClose();
+        const response = await axios.put(`${apiBase}/api/UserController/current`, payload, config);
+
+        // Update Context
+        login(response.data, token); 
+
+        messageApi.success("Profile updated successfully");
+        onClose();
     } catch (error) {
-      console.error(error);
-      messageApi.error('Failed to update profile');
+        console.error("Update error", error);
+        messageApi.error("Failed to update profile");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -109,36 +127,44 @@ export const ProfileModal = ({ open, onClose }) => {
     <>
       {contextHolder}
       <Modal
+        title={<Title level={3}>Edit Profile</Title>}
         open={open}
-        title="My Profile"
         onCancel={onClose}
         footer={null}
-        destroyOnClose
-        centered
         width={600}
+        destroyOnClose
       >
         {dataLoading ? <Skeleton active paragraph={{ rows: 6 }} /> : (
             <Form
                 form={form}
                 layout="vertical"
-                onFinish={onFinish}
+                onFinish={handleSubmit}
+                initialValues={{ 
+                    preferredLanguage: 'en-GB' 
+                }}
             >
-                <Divider orientation="left">Personal Details</Divider>
+                <Divider orientation="left">Personal Information</Divider>
                 <div style={{ display: 'flex', gap: '16px' }}>
-                    <Form.Item name="firstName" label="First Name" style={{ flex: 1 }} rules={[{ required: true }]}>
-                        <Input />
+                    <Form.Item name="firstName" label="First Name" rules={[{ required: true }]} style={{ flex: 1 }}>
+                        <Input prefix={<UserOutlined />} />
                     </Form.Item>
-                    <Form.Item name="lastName" label="Last Name" style={{ flex: 1 }} rules={[{ required: true }]}>
-                        <Input />
+                    <Form.Item name="lastName" label="Last Name" rules={[{ required: true }]} style={{ flex: 1 }}>
+                        <Input prefix={<UserOutlined />} />
                     </Form.Item>
                 </div>
 
+                <Form.Item name="emailAddress" label="Email Address">
+                    <Input prefix={<MailOutlined />} disabled />
+                </Form.Item>
+
+                <Divider orientation="left">Contact & Preferences</Divider>
                 <div style={{ display: 'flex', gap: '16px' }}>
-                     <Form.Item name="email" label="Email Address" style={{ flex: 1 }}>
-                        <Input prefix={<MailOutlined />} disabled /> 
-                     </Form.Item>
                      <Form.Item name="telephoneNumber" label="Phone" style={{ flex: 1 }}>
                         <Input prefix={<PhoneOutlined />} placeholder="+44..." /> 
+                     </Form.Item>
+                     {/* NEW LANGUAGE FIELD */}
+                     <Form.Item name="preferredLanguage" label="Language" style={{ flex: 1 }}>
+                        <Select showSearch options={languageOptions} placeholder="Select Language" />
                      </Form.Item>
                 </div>
 

@@ -29,6 +29,10 @@ namespace FineArtApi.Models
         [StringLength(50)]
         public string? TelephoneNumber { get; set; }
 
+        // NEW: Preferred Language for UI translation
+        [StringLength(10)]
+        public string? PreferredLanguage { get; set; }
+
         [StringLength(100)]
         public string Username { get; set; } = null!; // Resolves CS8618
 

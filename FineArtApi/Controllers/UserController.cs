@@ -55,7 +55,8 @@ namespace FineArtApi.Controllers
                 roleId = user.RoleId,
                 emailAddress = user.EmailAddress,
                 telephoneNumber = user.TelephoneNumber,
-                currencyCode = user.CurrencyCode
+                currencyCode = user.CurrencyCode,
+                preferredLanguage = user.PreferredLanguage // Include this in read-only profile view if needed
             });
         }
 
@@ -164,13 +165,16 @@ namespace FineArtApi.Controllers
             if (user == null) return NotFound();
 
             // Snapshot old state
-            var oldState = new { user.FirstName, user.LastName, user.TelephoneNumber, user.UserTypeId, user.UserSubTypeId };
+            var oldState = new { user.FirstName, user.LastName, user.TelephoneNumber, user.UserTypeId, user.UserSubTypeId, user.PreferredLanguage };
 
             user.FirstName = request.FirstName;
             user.LastName = request.LastName;
             user.TelephoneNumber = request.TelephoneNumber;
             user.UserTypeId = request.UserTypeId;
             user.UserSubTypeId = request.UserSubTypeId;
+            
+            // NEW: Map Preferred Language
+            user.PreferredLanguage = request.PreferredLanguage;
 
             await _context.SaveChangesAsync();
 
