@@ -61,7 +61,9 @@ namespace FineArtApi.Controllers
                     RoleId = registerDto.RoleId,
                     UserTypeId = registerDto.UserTypeId,
                     IsActive = true,
-                    MarketingConsent = registerDto.MarketingConsent
+                    MarketingConsent = registerDto.MarketingConsent,
+                    // NEW: Capture Language
+                    PreferredLanguage = registerDto.PreferredLanguage
                 };
 
                 _context.UserProfiles.Add(user);
@@ -118,7 +120,13 @@ namespace FineArtApi.Controllers
 
             await _auditService.LogAsync("UserProfiles", user.ProfileId, "UPDATE", user.ProfileId, new { LastLoginDate = oldLoginDate }, new { user.LastLoginDate });
 
-            return Ok(new { token = tokenString, userType = user.UserType?.UserTypeName });
+            return Ok(new 
+            { 
+                token = tokenString, 
+                userType = user.UserType?.UserTypeName,
+                // NEW: Return preferred language so the frontend can set it immediately
+                preferredLanguage = user.PreferredLanguage
+            });
         }
 
         // Endpoint for the Defect Reporting mobile app
@@ -335,22 +343,25 @@ namespace FineArtApi.Controllers
         public int RoleId { get; set; }
         [JsonPropertyName("userTypeId")]
         public int UserTypeId { get; set; }
-                [JsonPropertyName("marketingConsent")]
-                public bool MarketingConsent { get; set; }
-            }
+        [JsonPropertyName("marketingConsent")]
+        public bool MarketingConsent { get; set; }
+
+        // NEW: Field for Language Selection
+        [JsonPropertyName("preferredLanguage")]
+        public string? PreferredLanguage { get; set; }
+    }
         
-            public class RegisterDrDto
-            {
-                [JsonPropertyName("username")]
-                public string Username { get; set; } = string.Empty;
-                [JsonPropertyName("password")]
-                public string Password { get; set; } = string.Empty;
-                [JsonPropertyName("email")]
-                public string Email { get; set; } = string.Empty;
-                [JsonPropertyName("firstName")]
-                public string FirstName { get; set; } = string.Empty;
-                [JsonPropertyName("lastName")]
-                public string LastName { get; set; } = string.Empty;
-            }
-        }
-        
+    public class RegisterDrDto
+    {
+        [JsonPropertyName("username")]
+        public string Username { get; set; } = string.Empty;
+        [JsonPropertyName("password")]
+        public string Password { get; set; } = string.Empty;
+        [JsonPropertyName("email")]
+        public string Email { get; set; } = string.Empty;
+        [JsonPropertyName("firstName")]
+        public string FirstName { get; set; } = string.Empty;
+        [JsonPropertyName("lastName")]
+        public string LastName { get; set; } = string.Empty;
+    }
+}

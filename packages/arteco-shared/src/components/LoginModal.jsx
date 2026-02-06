@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Button, message, Typography, Row, Col, Select, Divider } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, IdcardOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, IdcardOutlined, GlobalOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 const { Text, Link } = Typography;
 const { Option } = Select;
+
+// Standard ISO Language Codes (Same as ProfileModal)
+const languageOptions = [
+    { label: 'English (UK)', value: 'en-GB' },
+    { label: 'English (US)', value: 'en-US' },
+    { label: 'French', value: 'fr-FR' },
+    { label: 'Spanish', value: 'es-ES' },
+    { label: 'German', value: 'de-DE' },
+    { label: 'Italian', value: 'it-IT' },
+    { label: 'Chinese (Simplified)', value: 'zh-CN' },
+];
 
 export const LoginModal = ({ open, onClose }) => {
   const { login } = useAuth();
@@ -76,7 +87,8 @@ export const LoginModal = ({ open, onClose }) => {
         roleId: 2,         // Standard User
         marketingConsent: true,
         userTypeId: values.userTypeId,
-        userSubTypeId: values.userSubTypeId 
+        userSubTypeId: values.userSubTypeId,
+        preferredLanguage: values.preferredLanguage // Explicitly ensure this is passed
       };
     }
 
@@ -134,6 +146,7 @@ export const LoginModal = ({ open, onClose }) => {
           layout="vertical"
           onFinish={onFinish}
           style={{ marginTop: 20 }}
+          initialValues={{ preferredLanguage: 'en-GB' }} // Default to UK English
         >
           {isRegister && (
             <>
@@ -152,6 +165,19 @@ export const LoginModal = ({ open, onClose }) => {
 
               <Form.Item name="email" rules={[{ required: true, type: 'email', message: 'Valid email required' }]}>
                 <Input prefix={<MailOutlined />} placeholder="Email Address" />
+              </Form.Item>
+
+              {/* NEW: Preferred Language Dropdown */}
+              <Form.Item name="preferredLanguage" rules={[{ required: true, message: 'Please select a language' }]}>
+                <Select 
+                    prefix={<GlobalOutlined />} 
+                    placeholder="Preferred Language"
+                    options={languageOptions}
+                    showSearch
+                    filterOption={(input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                />
               </Form.Item>
 
               <Divider dashed style={{ margin: '12px 0' }}><Text type="secondary" style={{fontSize: 12}}>Profile Type</Text></Divider>
