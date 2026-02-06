@@ -11,7 +11,6 @@ import hero1 from '../assets/LandingHero1.png';
 import hero2 from '../assets/LandingHero2.jpeg';
 import teamImg from '../assets/Team.jpg';
 import galleryImg from '../assets/Gallery.jpg';
-import logoImg from '../assets/White ARTECO logo.png';
 
 const LandingPage = () => {
   const brandBlue = appTheme.token.colorPrimary;
@@ -94,10 +93,8 @@ const LandingPage = () => {
         },
         body: JSON.stringify({
           messages: [
-            // Combine instructions into user message to avoid filtering/ignoring
             { role: "user", content: instructions + "\n\nUSER QUESTION: " + question }
           ],
-          // CORRECTED PARAMETERS FOR REASONING MODELS
           temperature: 1, 
           max_completion_tokens: 2000 
         })
@@ -113,7 +110,6 @@ const LandingPage = () => {
 
       if (data.choices && data.choices.length > 0) {
         const rawContent = data.choices[0].message.content;
-        // Apply the line break formatting before setting state
         setAiResponse(formatTextWithBreaks(rawContent));
       } else {
         setAiResponse("No analysis returned.");
@@ -135,14 +131,16 @@ const LandingPage = () => {
     <ConfigProvider theme={appTheme}>
       <div className="lp-container">
         
-        {/* NAVIGATION BAR */}
+        {/* NAVIGATION BAR (NOW INCLUDES THE LOGO LOGIC) */}
         <Navbar onLoginClick={() => setIsLoginOpen(true)} />
 
         {/* HERO SECTION */}
         <div className="lp-hero-section">
           {/* Left Column */}
           <div className="lp-hero-left">
-            <img src={logoImg} alt="ARTECO" className="lp-logo-img" />
+            
+            {/* SPACER DIV: Keeps text aligned (Height 80px + 4rem margin matches old logo) */}
+            <div style={{ height: '80px', marginBottom: '4rem' }}></div>
             
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div className="lp-hero-heading">
@@ -194,7 +192,7 @@ const LandingPage = () => {
                      ? <span style={{ fontStyle: 'italic', color: '#666' }}>Analyzing Request...</span> 
                      : <pre style={{ 
                          whiteSpace: 'pre-wrap', 
-                         fontFamily: "'Lato', sans-serif", // Ensure it uses site font, not monospace
+                         fontFamily: "'Lato', sans-serif", 
                          margin: 0 
                        }}>
                          {aiResponse || "No data returned."}
@@ -250,7 +248,7 @@ const LandingPage = () => {
              </div>
 
              <div className="lp-tool-card">
-                <Tooltip title="A standardized, auditable condition reporting tool that digitizes inspections..." color={brandBlue}>
+                <Tooltip title="Secure trading and transparent asset history..." color={brandBlue}>
                   <ShopOutlined style={{ fontSize: '24px', color: brandBlue, cursor: 'pointer' }} />
                 </Tooltip>
                 <h4>MARKET PLACE</h4>
@@ -259,7 +257,7 @@ const LandingPage = () => {
              </div>
 
              <div className="lp-tool-card">
-                <Tooltip title="An intelligent shipping module that automates logistics for artwork movement..." color={brandBlue}>
+                <Tooltip title="Connects disparate systems..." color={brandBlue}>
                   <LineChartOutlined style={{ fontSize: '24px', color: brandBlue, cursor: 'pointer' }} />
                 </Tooltip>
                 <h4>SMART INTEGRATIONS</h4>

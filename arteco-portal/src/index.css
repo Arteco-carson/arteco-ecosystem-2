@@ -1,23 +1,41 @@
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
+/* arteco-portal/src/index.css */
 
+/* 1. Global Font Defaults */
 :root {
   font-family: 'Lato', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-}
-
-/* Reset for Full Screen App */
-html, body {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  background-color: #f0f2f5;
-  font-family: 'Lato', sans-serif;
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 2. THE LAYOUT RESET (Fixes the White Gap) */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: white; 
+}
+
 #root {
-  height: 100%;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  
+  /* CRITICAL: Turn off Vite's default centering */
+  display: block; 
+  text-align: left;
+  max-width: none; 
+}
+
+/* 3. Safety for Images */
+img {
+  max-width: 100%;
+  display: block;
 }

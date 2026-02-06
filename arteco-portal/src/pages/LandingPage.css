@@ -1,35 +1,49 @@
-/* 1. IMPORT LATO FONT */
+/* arteco-portal/src/pages/LandingPage.css */
+
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
 
-/* --- GLOBAL RESET --- */
+/* --- GLOBAL CONTAINER --- */
 .lp-container {
   font-family: 'Lato', sans-serif;
   color: #202020;
   width: 100%;
-  overflow-x: hidden;
-  margin: 0;
-  padding: 0;
+  min-height: 100vh;
   background-color: white; 
+  position: relative;
 }
 
 /* --- SECTION 1: HERO --- */
 .lp-hero-section {
   display: flex;
-  min-height: 80vh; 
+  min-height: 80vh; /* Locked in at 80vh for perfect depth */
   width: 100%;
+  position: relative;
+  z-index: 1; 
 }
 
-/* LEFT PANEL (Original Design Preserved) */
+/* LEFT PANEL */
 .lp-hero-left {
   flex: 0 0 55%; 
   background-color: #0D0060;
   color: #fff;
   display: flex;
   flex-direction: column;
-  padding: 8% 15% 8% 6%; 
+  
+  /* ALIGNMENT LOGIC: 
+     Top: 180px (Positions text below the logo)
+     Left: 6% (Matches Navbar padding)
+  */
+  padding: 180px 15% 60px 6%; 
+  
   box-sizing: border-box;
   position: relative;
   z-index: 10;
+}
+
+/* GHOST BUSTER: Hide the Spacer Div */
+/* This ensures the spacer doesn't push content down; we use padding instead */
+.lp-hero-left > div:first-child {
+  display: none !important;
 }
 
 /* THE SLIDESHOW STAGE */
@@ -59,14 +73,6 @@
   z-index: 2;
 }
 
-/* Logo Image Styling */
-.lp-logo-img {
-  width: 180px; 
-  height: auto;
-  margin-bottom: 4rem;
-  display: block;
-}
-
 /* Typography */
 .lp-hero-heading {
   color: #96AAEF;
@@ -91,27 +97,20 @@
 }
 
 /* --- SEARCH ANIMATION LOGIC --- */
-
-/* The Wrapper handles the positioning and movement */
 .lp-search-wrapper {
   position: absolute;
-  /* STARTING POSITION: Center of image area */
   top: 40%;
   left: 50%;
   transform: translateX(-50%);
   width: 70%;
   z-index: 20;
-  
-  /* DRAMA: Slow, smooth movement (1.5s) */
   transition: top 1.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* ACTIVE STATE: Move Up to 15% */
 .lp-search-wrapper.active {
   top: 15%; 
 }
 
-/* The Input Bar (Visual Styling) */
 .lp-search-bar {
   background: white;
   border-radius: 50px;
@@ -141,7 +140,6 @@
   background: transparent;
 }
 
-/* RESULT BOX (The Fade In) */
 .lp-result-box {
   margin-top: 20px;
   background: rgba(255, 255, 255, 0.95); 
@@ -149,25 +147,19 @@
   border-radius: 20px; 
   padding: 30px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-  
   font-family: 'Lato', sans-serif;
   font-size: 1rem;
   line-height: 1.6;
   color: #333;
   white-space: pre-wrap; 
-  
-  /* Animation Config */
   opacity: 0;
   transform: translateY(20px);
-  animation: fadeUp 1.5s ease forwards; /* Slow Fade */
-  animation-delay: 1.0s; /* Wait for the move up */
-  
-  /* Scrolling Logic: Reduced to 500px */
+  animation: fadeUp 1.5s ease forwards; 
+  animation-delay: 1.0s; 
   max-height: 500px; 
   overflow-y: auto;
 }
 
-/* Custom Scrollbar */
 .lp-result-box::-webkit-scrollbar { width: 8px; }
 .lp-result-box::-webkit-scrollbar-track { background: transparent; }
 .lp-result-box::-webkit-scrollbar-thumb { background: rgba(13, 0, 96, 0.2); border-radius: 4px; }

@@ -1,40 +1,89 @@
-/* Navbar.css */
+/* arteco-portal/src/components/Navbar.css */
+
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
 
-/* --- DESKTOP CONTAINER --- */
-/* Floats below top, Aligned Right */
+/* --- NAVBAR CONTAINER --- */
 .navbar-container {
-  position: fixed;
+  position: fixed; 
   top: 30px; 
-  right: 5%; 
-  width: auto;
+  left: 0; 
+  right: 0;
+  width: 100%;
+  padding: 0 6%; 
   z-index: 1001; 
   display: flex;
   align-items: flex-start;
-  gap: 15px; 
+  justify-content: space-between; 
+  box-sizing: border-box;
+  pointer-events: none; 
+}
+
+.navbar-container > * {
+  pointer-events: auto; 
 }
 
 /* --- SHARED GLASS STYLE --- */
 .glass-pill {
-  background: rgba(255, 255, 255, 0.5); /* The "Cloudy" Glass Look */
+  background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  
   border: none;
   border-radius: 50px; 
   padding: 0 30px;
   height: 50px; 
   display: flex;
   align-items: center;
-  
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); 
-  transition: all 0.3s ease;
+  
+  /* ANIMATION SPEED */
+  transition: all 1.25s cubic-bezier(0.22, 1, 0.36, 1); 
 }
 
 .glass-pill:hover {
   background: rgba(255, 255, 255, 0.65);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); 
   transform: translateY(-1px);
+}
+
+/* --- LOGO PILL ANIMATIONS --- */
+.logo-pill {
+  cursor: pointer;
+  position: relative;
+}
+
+/* --- COLOR SETTINGS --- */
+.nav-logo-img {
+  height: 24px; 
+  width: auto;
+  transition: all 1.25s cubic-bezier(0.22, 1, 0.36, 1);
+  
+  /* APPROVED COLOR: DEEP BLUE */
+  filter: brightness(0) saturate(100%) invert(8%) sepia(87%) saturate(5412%) hue-rotate(244deg) brightness(69%) contrast(143%);
+}
+
+/* --- HERO STATE (The "Start" Position) --- */
+.logo-pill.hero-state {
+  background: transparent; 
+  box-shadow: none;        
+  backdrop-filter: none;
+  transform-origin: left center;
+
+  /* APPROVED POSITION: Aligned left with text, 135px drop */
+  transform: 
+    translate(
+      -90px, 
+      135px    
+    ) 
+    scale(3.0); 
+}
+
+.logo-pill.hero-state .nav-logo-img {
+  filter: brightness(0) invert(1) !important; 
+}
+
+/* SCROLLED STATE */
+.logo-pill.scrolled {
+  transform: translate(0, 0) scale(1) !important;
 }
 
 /* --- DESKTOP MENUS --- */
@@ -59,18 +108,18 @@
 .nav-link {
   font-family: 'Lato', sans-serif;
   font-size: 15px; 
-  font-weight: 400; 
-  color: #000;   
+  font-weight: 700; 
+  color: #0D0060;   
   text-decoration: none;
   letter-spacing: 0.02em;
   transition: color 0.3s;
 }
 
 .nav-item:hover .nav-link {
-  color: #555; 
+  color: #4a5d9e; 
 }
 
-/* --- DESKTOP MEGA MENU --- */
+/* --- MEGA MENU --- */
 .mega-menu {
   position: absolute;
   top: 60px; 
@@ -103,23 +152,16 @@
   transition: all 0.2s;
 }
 
-.mega-menu li:last-child {
-  margin-bottom: 0;
-}
-
-.mega-menu li:hover {
-  color: #000;
-  transform: translateX(3px);
-  font-weight: 600;
-}
+.mega-menu li:last-child { margin-bottom: 0; }
+.mega-menu li:hover { color: #0D0060; transform: translateX(3px); font-weight: 600; }
 
 /* --- MOBILE TOGGLE --- */
 .mobile-toggle {
   display: none;
-  background: rgba(255, 255, 255, 0.5); /* Matches .glass-pill transparency */
+  background: rgba(255, 255, 255, 0.5); 
   backdrop-filter: blur(12px);
   border: none;
-  color: black; 
+  color: #0D0060; 
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -128,32 +170,25 @@
   justify-content: center;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   z-index: 1002;
+  pointer-events: auto;
 }
 
-/* --- MOBILE OVERLAY (The Drawer) --- */
+/* --- MOBILE OVERLAY --- */
 .mobile-overlay {
-  position: fixed;
+  position: fixed; 
   top: 0;
   right: 0;
   width: 100%;
-  max-width: 380px; /* Drawer Width Constraint */
+  max-width: 400px; 
   height: 100vh;
-  
-  /* MATCHING TEXTURE: 0.5 Transparency */
-  background: rgba(255, 255, 255, 0.5); 
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  
-  box-shadow: -10px 0 40px rgba(0,0,0,0.1);
-  z-index: 1000;
-  
-  /* Content Alignment */
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  z-index: 2000; 
+  padding: 80px 40px;
+  box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+  transform: translateX(100%); 
   display: flex;
   flex-direction: column;
-  padding: 120px 40px; /* Spacing from top */
-  align-items: flex-start; /* Left Align Content */
-  transform: translateX(100%);
-  overflow-y: auto; /* Scroll if menu is tall */
 }
 
 .mobile-overlay ul {
@@ -163,93 +198,68 @@
   width: 100%;
 }
 
-/* Mobile Top Level Links */
 .mobile-item-container {
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(0,0,0,0.05); /* Subtle separator */
-  padding-bottom: 0.5rem;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
 }
 
 .mobile-link {
   font-family: 'Lato', sans-serif;
-  font-size: 1.5rem; /* Clean size */
-  font-weight: 300;
-  color: #000;
-  /* Title Case (No Uppercase) */
-  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0D0060;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: color 0.3s;
+  cursor: pointer;
 }
 
-.mobile-link:hover {
-  color: #555;
-}
-
-/* Mobile Submenus (The Accordion) */
 .mobile-submenu {
-  overflow: hidden;
   height: 0;
-  opacity: 0;
-  transition: all 0.3s ease-out;
-  padding-left: 10px; /* Indent */
+  overflow: hidden;
+  transition: height 0.3s ease;
 }
 
 .mobile-submenu.open {
   height: auto;
-  opacity: 1;
   margin-top: 10px;
-  margin-bottom: 10px;
 }
 
 .mobile-submenu li {
-  font-size: 1rem;
-  color: #444;
-  padding: 8px 0;
-  font-weight: 300;
+  font-size: 1.1rem;
+  color: #666;
+  padding: 5px 0;
   cursor: pointer;
 }
 
-.mobile-submenu li:hover {
-  color: black;
-  font-weight: 400;
-}
-
-/* Chevron Rotation */
-.chevron {
-  transition: transform 0.3s;
-  font-size: 1rem;
-  opacity: 0.5;
-}
-
-.chevron.rotate {
-  transform: rotate(180deg);
-}
-
-/* Mobile Login Button */
 .mobile-login-btn {
+  background: #0D0060;
+  color: white;
   width: 100%;
-  background: rgba(0,0,0,0.05); /* Very subtle grey fill */
-  border: 1px solid rgba(0,0,0,0.1);
-  color: #000;
-  padding: 15px 0;
-  font-size: 1rem;
-  /* Title Case (No Uppercase) */
-  letter-spacing: 0.05em;
+  padding: 15px;
+  border-radius: 50px;
+  border: none;
+  font-size: 1.2rem;
+  font-weight: 700;
   margin-top: 20px;
   cursor: pointer;
-  transition: all 0.3s;
 }
 
-.mobile-login-btn:hover {
-  background: black;
-  color: white;
-}
-
-/* Responsiveness */
+/* --- RESPONSIVE --- */
 @media (max-width: 1024px) {
   .nav-menu-pill { display: none; }
   .login-pill { display: none; }
   .mobile-toggle { display: flex; }
+  
+  .logo-pill.hero-state {
+     transform: none !important;
+     background: transparent;
+     backdrop-filter: none;
+     box-shadow: none;
+  }
+  
+  .logo-pill.hero-state .nav-logo-img {
+     filter: brightness(0) invert(1) !important;
+  }
 }
