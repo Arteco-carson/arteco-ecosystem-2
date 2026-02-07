@@ -9,6 +9,7 @@ import Logo from './assets/White ARTECO logo.png';
 import Homepage from './components/Homepage.jsx';
 import CollectionsList from './components/CollectionsList.jsx';
 import CreateCollection from './components/CreateCollection.jsx';
+import GroupDetail from './components/GroupDetail.jsx';
 import ArtworkList from './components/ArtworkList.jsx';
 import ArtworkDetails from './components/ArtworkDetails.jsx';
 import ArtistList from './components/ArtistList.jsx';
@@ -53,7 +54,7 @@ const AppShell = () => {
   return (
     <ArtecoShell 
       title="Collection Manager" 
-      navItems={navItems}
+      navItems={navItems} 
       logoSrc={Logo}
     >
       <Outlet />
@@ -107,6 +108,7 @@ function App() {
                 {/* Feature Routes */}
                 <Route path="/collections" element={<CollectionsList />} />
                 <Route path="/collections/new" element={<CreateCollection />} />
+                <Route path="/collections/group/:groupId" element={<GroupDetail />} />
                 
                 <Route path="/artworks" element={<ArtworkList />} />
                 <Route path="/artwork/:id" element={<ArtworkDetails />} />
@@ -122,9 +124,9 @@ function App() {
               </Route>
               
               {/* FALLBACK REDIRECTS */}
-              {/* If user goes to /acm/ or /acm/unknown, send to Home */}
-              <Route path="/" element={<Navigate to="/home" replace />} />
-              <Route path="*" element={<Navigate to="/home" replace />} />
+              {/* If user goes to /acm/ or /acm/unknown, send to Collections Dashboard */}
+              <Route path="/" element={<Navigate to="/collections" replace />} />
+              <Route path="*" element={<Navigate to="/collections" replace />} />
 
             </Route>
           </Routes>

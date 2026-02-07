@@ -1,292 +1,186 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Col, Row, Spin, Typography, Select, Alert, Button, ConfigProvider, Modal, message } from 'antd';
-import { useNavigate } from 'react-router-dom';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import api from '../api';
+import React, { useEffect, useState } from 'react';
+import { Button, Layout, Typography, Modal, Input, Form, Spin, message, theme } from 'antd';
+import { PlusOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import api from '../api'; 
+import CollectionRow from './CollectionRow';
 
+const { Content } = Layout;
 const { Title, Text } = Typography;
-const { Option } = Select;
+const { TextArea } = Input;
 
 const CollectionsList = () => {
-  const [artworks, setArtworks] = useState([]);
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedCollection, setSelectedCollection] = useState(null);
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [unassignedArtworks, setUnassignedArtworks] = useState([]);
-  const [selectedArtworkIds, setSelectedArtworkIds] = useState([]);
-  const [addingArtworks, setAddingArtworks] = useState(false);
-  const [messageApi, contextHolder] = message.useMessage();
-  const navigate = useNavigate();
+  
+  // Modal States
+  const [isCollectionModalVisible, setIsCollectionModalVisible] = useState(false);
+  const [isGroupModalVisible, setIsGroupModalVisible] = useState(false);
+  const [selectedCollectionId, setSelectedCollectionId] = useState(null);
+  const [form] = Form.useForm();
+  
+  const { token } = theme.useToken();
+  
+  // Environment variable for Portal URL (must be set in .env file)
+  const portalUrl = import.meta.env.VITE_PORTAL_URL || '/';
 
-  const fetchArtworksForCollection = useCallback(async (collectionId) => {
+  // --- Data Fetching ---
+  const fetchCollections = async () => {
     try {
-      const res = await api.get(`/api/artworks/user?collectionId=${collectionId}`);
-      setArtworks(res.data);
-      setError(null);
-    } catch (err) {
-      if (err.response?.status === 401) {
-        setError("Security session expired. Please re-authenticate.");
-        localStorage.removeItem('token');
-        navigate('/login');
+      setLoading(true);
+      const response = await api.get('/api/collections');
+      setCollections(response.data);
+    } catch (error) {
+      console.error('Failed to load collections:', error);
+      if (error.code === "ERR_NETWORK") {
+        message.error('Cannot connect to API. Please check your network.');
       } else {
-        setError("Failed to retrieve collection artworks.");
+        message.error('Failed to load collections');
       }
+    } finally {
+      setLoading(false);
     }
-  }, [navigate]);
-
-  const handleDeleteCollection = () => {
-    if (!selectedCollection) return;
-
-    const hasArtworks = artworks.length > 0;
-    const confirmMessage = hasArtworks 
-      ? 'The artworks will be removed from the collection. Click OK to confirm or Cancel to not delete the Collection.'
-      : 'Are you sure you want to delete this collection? This action cannot be undone.';
-
-    Modal.confirm({
-      title: 'Delete Collection',
-      content: confirmMessage,
-      okText: 'OK',
-      okType: 'primary',
-      cancelText: 'Cancel',
-      onOk: async () => {
-        try {
-          await api.delete(`/api/collections/${selectedCollection}`);
-          
-          const updatedCollections = collections.filter(c => c.collectionId !== selectedCollection);
-          setCollections(updatedCollections);
-          
-          if (updatedCollections.length > 0) {
-            const nextId = updatedCollections[0].collectionId;
-            setSelectedCollection(nextId);
-            sessionStorage.setItem('selectedCollection', nextId);
-            fetchArtworksForCollection(nextId);
-          } else {
-            setSelectedCollection(null);
-            sessionStorage.removeItem('selectedCollection');
-            setArtworks([]);
-          }
-        } catch (err) {
-          console.error("Delete Error:", err);
-          setError("Failed to delete collection. Ensure it is not locked by governance policies.");
-        }
-      }
-    });
   };
 
-  const fetchUnassignedArtworks = useCallback(async () => {
-    try {
-        const res = await api.get(`/api/artworks/user?unassigned=true`);
-        setUnassignedArtworks(res.data);
-    } catch (err) {
-        console.error("Failed to fetch unassigned artworks", err);
-    }
+  useEffect(() => {
+    fetchCollections();
   }, []);
 
-  const handleAddArtworksToCollection = async () => {
-      if (selectedArtworkIds.length === 0) return;
-      setAddingArtworks(true);
-      try {
-          await api.post(`/api/collections/${selectedCollection}/artworks`, selectedArtworkIds);
-          messageApi.success('Artworks added to collection.');
-          setIsAddModalVisible(false);
-          fetchArtworksForCollection(selectedCollection);
-      } catch (err) {
-          messageApi.error('Failed to add artworks.');
-      } finally {
-          setAddingArtworks(false);
-      }
+  // --- Handlers ---
+  const handleCreateCollection = async (values) => {
+    try {
+      await api.post('/api/collections', {
+        name: values.name,
+        description: values.description
+      });
+      message.success('Collection created');
+      setIsCollectionModalVisible(false);
+      form.resetFields();
+      fetchCollections(); 
+    } catch (error) {
+      console.error("Create Collection Failed:", error.response || error);
+      message.error(`Failed to create: ${error.response?.data?.message || error.message}`);
+    }
   };
 
-  // Initial fetch for the collections dropdown
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`/api/collections`);
-        setCollections(res.data);
-        
-        // Check session storage for a previously selected collection
-        const savedCollectionId = sessionStorage.getItem('selectedCollection');
-        
-        let initialCollectionId = null;
-        if (savedCollectionId && res.data.some(c => c.collectionId === parseInt(savedCollectionId, 10))) {
-          initialCollectionId = parseInt(savedCollectionId, 10);
-        } else if (res.data.length > 0) {
-          initialCollectionId = res.data[0].collectionId;
-        }
+  const handleCreateGroup = async (values) => {
+    try {
+      await api.post('/api/collections/subgroup', {
+        collectionId: selectedCollectionId,
+        name: values.name,
+        description: values.description
+      });
+      message.success('Group added');
+      setIsGroupModalVisible(false);
+      form.resetFields();
+      fetchCollections(); 
+    } catch (error) {
+      console.error("Create Group Failed:", error);
+      message.error('Failed to create group');
+    }
+  };
 
-        if (initialCollectionId) {
-          setSelectedCollection(initialCollectionId);
-          await fetchArtworksForCollection(initialCollectionId);
-        }
-
-      } catch (err) {
-        console.error("Governance Registry Fetch Error:", err);
-        if (err.response?.status === 401) {
-          setError("Security session expired. Please re-authenticate.");
-          localStorage.removeItem('token');
-          navigate('/login');
-        } else {
-          setError("Could not load collection registry.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialData();
-  }, [navigate, fetchArtworksForCollection]);
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '100px' }}>
-        {/* Fixed Spin Warning: Wrapping in a div makes it a "nested" pattern */}
-        <Spin size="large">
-          <div style={{ marginTop: '20px' }}>Validating Management Credentials...</div>
-        </Spin>
-      </div>
-    );
-  }
+  const openGroupModal = (collectionId) => {
+    setSelectedCollectionId(collectionId);
+    setIsGroupModalVisible(true);
+  };
 
   return (
-    <>
-    {contextHolder}
-    <div style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <Title level={2} style={{ color: '#1e293b', margin: 0 }}>Collections</Title>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Button 
-              type="primary"
-              icon={<DeleteOutlined />}
-              onClick={handleDeleteCollection}
-              disabled={!selectedCollection}
-          >
-              Delete Collection
-          </Button>
-          <Button 
-              type="primary"
-              onClick={() => {
-                  fetchUnassignedArtworks();
-                  setSelectedArtworkIds([]);
-                  setIsAddModalVisible(true);
-              }}
-              disabled={!selectedCollection}
-          >
-              Add Artwork to Collection
-          </Button>
-          <Button 
-              type="primary" 
-              icon={<PlusOutlined />}
-              onClick={() => navigate('/collections/new')}
-          >
-              Create Collection
-          </Button>
-        </div>
-      </div>
+    <Layout style={{ minHeight: '100vh', background: '#fff' }}>
       
-      <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-        <Text strong>Select Registry:</Text>
-        <Select
-          style={{ width: 300 }}
-          value={selectedCollection}
-          placeholder="Select a collection"
-          onChange={(value) => {
-            setSelectedCollection(value);
-            sessionStorage.setItem('selectedCollection', value);
-            fetchArtworksForCollection(value);
-          }}
+      {/* Top Navigation Bar */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '16px 24px',
+        borderBottom: '1px solid #f0f0f0' 
+      }}>
+        <Button type="link" icon={<ArrowLeftOutlined />} href={portalUrl} style={{ color: token.colorText }}>
+          Return to portal
+        </Button>
+        <Button 
+          type="primary" 
+          shape="round" 
+          icon={<PlusOutlined />} 
+          onClick={() => setIsCollectionModalVisible(true)}
+          style={{ backgroundColor: token.colorPrimary }}
         >
-          {collections.map((c) => (
-            <Option key={c.collectionId} value={c.collectionId}>{c.collectionName}</Option>
-          ))}
-        </Select>
+          Add Collection
+        </Button>
       </div>
 
-      {/* Fixed Alert Warning: Changed 'message' to 'description' and added 'title' */}
-      {error && (
-        <Alert 
-          title="Security Protocol Alert"
-          description={error} 
-          type="error" 
-          showIcon 
-          style={{ marginBottom: '20px' }} 
-        />
-      )}
-
-      <Row gutter={[24, 24]}>
-        {artworks.map((art) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={art.artworkId}>
-            <Card
-              hoverable
-              cover={
-                art.imageUrl ? (
-                  <img alt={art.title} src={art.imageUrl} style={{ height: 200, objectFit: 'contain', width: '100%', backgroundColor: '#f1f5f9' }} />
-                ) : (
-                  <div style={{ height: 200, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text type="secondary">No Image Available</Text>
-                  </div>
-                )
-              }
-              onClick={() => navigate(`/artwork/${art.artworkId}`)}
+      <Content style={{ padding: '24px' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', marginTop: '50px' }}>
+            <Spin size="large" />
+          </div>
+        ) : collections.length === 0 ? (
+          /* Empty State */
+          <div style={{ textAlign: 'center', marginTop: '100px' }}>
+            <Title level={3}>No Collections Yet</Title>
+            <Text type="secondary">Create your first collection to start organizing your inventory.</Text>
+            <br />
+            <Button 
+              type="primary" 
+              shape="round" 
+              icon={<PlusOutlined />} 
+              onClick={() => setIsCollectionModalVisible(true)}
+              style={{ marginTop: '24px' }}
             >
-              <Card.Meta 
-                title={art.title} 
-                description={
-                  <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text strong style={{ color: '#059669' }}>
-                      £{art.acquisitionCost?.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                    </Text>
-                    <Button 
-                      type="link"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/artwork/${art.artworkId}`);
-                      }}
-                      style={{ padding: 0, fontWeight: '600', fontSize: '0.9rem' }}
-                    >
-                      View
-                    </Button>
-                  </div>
-                } 
+              Add Collection
+            </Button>
+          </div>
+        ) : (
+          /* Populated State */
+          <div>
+            {collections.map(col => (
+              <CollectionRow 
+                key={col.collectionId} 
+                collection={col} 
+                onAddGroup={openGroupModal} 
               />
-            </Card>
-          </Col>
-        ))}
-      </Row>
+            ))}
+          </div>
+        )}
+      </Content>
 
-      {!loading && artworks.length === 0 && !error && (
-        <div style={{ textAlign: 'center', marginTop: '40px', color: '#64748b' }}>
-          No artworks found in the selected collection.
-        </div>
-      )}
+      {/* --- Modals --- */}
+      
+      <Modal
+        title="New Collection"
+        open={isCollectionModalVisible}
+        onCancel={() => setIsCollectionModalVisible(false)}
+        onOk={() => form.submit()}
+        destroyOnClose
+      >
+        <Form form={form} onFinish={handleCreateCollection} layout="vertical" preserve={false}>
+          <Form.Item name="name" label="Collection Name" rules={[{ required: true, message: 'Please enter a name' }]}>
+            <Input placeholder="e.g. Summer Auction 2026" />
+          </Form.Item>
+          <Form.Item name="description" label="Description">
+            <TextArea rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
-        title="Add Artworks to Collection"
-        open={isAddModalVisible}
-        onCancel={() => setIsAddModalVisible(false)}
-        onOk={handleAddArtworksToCollection}
-        confirmLoading={addingArtworks}
-        okText="Add Selected"
+        title="Add Group"
+        open={isGroupModalVisible}
+        onCancel={() => setIsGroupModalVisible(false)}
+        onOk={() => form.submit()}
+        destroyOnClose
       >
-        <p>Select artworks to add to the current collection:</p>
-        <Select
-            mode="multiple"
-            style={{ width: '100%' }}
-            placeholder="Select artworks"
-            value={selectedArtworkIds}
-            onChange={setSelectedArtworkIds}
-            optionFilterProp="children"
-        >
-            {unassignedArtworks.map(art => (
-                <Option key={art.artworkId} value={art.artworkId}>{art.title} ({art.artistName})</Option>
-            ))}
-        </Select>
-        {unassignedArtworks.length === 0 && <div style={{ marginTop: 10, color: '#999' }}>No unassigned artworks found.</div>}
+        <Form form={form} onFinish={handleCreateGroup} layout="vertical" preserve={false}>
+          <Form.Item name="name" label="Group Name" rules={[{ required: true, message: 'Please enter a name' }]}>
+            <Input placeholder="e.g. Oils, Sculptures" />
+          </Form.Item>
+          <Form.Item name="description" label="Description">
+            <TextArea rows={3} />
+          </Form.Item>
+        </Form>
       </Modal>
-    </div>
-    </>
+
+    </Layout>
   );
 };
 

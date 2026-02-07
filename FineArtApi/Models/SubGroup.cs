@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization; // Required for JsonIgnore
 
 namespace FineArtApi.Models
 {
@@ -22,7 +22,7 @@ namespace FineArtApi.Models
         public int CollectionId { get; set; }
 
         [ForeignKey("CollectionId")]
-        [JsonIgnore] // Prevents circular loops in JSON
+        [JsonIgnore] // <--- STOPS THE INFINITE LOOP
         public virtual Collection? Collection { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

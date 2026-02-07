@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization; // Required for JsonIgnore
 
 namespace FineArtApi.Models
 {
@@ -69,6 +70,7 @@ namespace FineArtApi.Models
         public int? SubGroupId { get; set; }
 
         [ForeignKey("SubGroupId")]
+        [JsonIgnore] // <--- STOPS THE INFINITE LOOP
         public virtual SubGroup? SubGroup { get; set; }
 
         // --- NAVIGATION PROPERTIES ---
