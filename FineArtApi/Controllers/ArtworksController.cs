@@ -56,7 +56,6 @@ namespace FineArtApi.Controllers
             var blobServiceClient = new BlobServiceClient(connectionString);
             var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
             
-            // Ensure container exists (optional check, good for dev)
             await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
 
             foreach (var file in files)
@@ -72,7 +71,6 @@ namespace FineArtApi.Controllers
                         await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeader });
                     }
                     
-                    // Add the absolute URI of the blob to the list
                     imageUrls.Add(blobClient.Uri.ToString());
                 }
             }
@@ -83,7 +81,6 @@ namespace FineArtApi.Controllers
         [HttpGet("editions")]
         public async Task<ActionResult<IEnumerable<object>>> GetEditions()
         {
-            // Project to anonymous object to avoid circular references and over-fetching
             return await _context.Set<Edition>()
                 .Select(e => new {
                     e.EditionId,
@@ -105,22 +102,24 @@ namespace FineArtApi.Controllers
                 return Unauthorized(new { message = "Security Identity missing or invalid." });
             }
 
-            // FIXED: Navigate through ca.Collection to reach the Owner
+            // FIXED: Use SubGroup logic instead of CollectionArtworks
             var query = _context.Artworks
                 .Include(a => a.Artist)
                 .Include(a => a.ArtworkImages)
-                .Where(a => a.CollectionArtworks.Any(ca => ca.Collection.OwnerProfileId == profileId) 
+                .Include(a => a.SubGroup)
+                .ThenInclude(sg => sg.Collection) // Navigate up to Collection
+                .Where(a => (a.SubGroup != null && a.SubGroup.Collection.OwnerProfileId == profileId) 
                             || a.CreatedByProfileId == profileId)
                 .AsQueryable();
 
             if (unassigned)
             {
-                query = query.Where(a => !a.CollectionArtworks.Any());
+                query = query.Where(a => a.SubGroupId == null);
             }
             else if (collectionId.HasValue)
             {
-                // Further filter by collectionId if provided, still respecting the owner scope.
-                query = query.Where(a => a.CollectionArtworks.Any(ca => ca.CollectionId == collectionId.Value));
+                // Filter by CollectionId via the SubGroup
+                query = query.Where(a => a.SubGroup != null && a.SubGroup.CollectionId == collectionId.Value);
             }
 
             var results = await query.Select(a => new {
@@ -140,7 +139,6 @@ namespace FineArtApi.Controllers
         [HttpGet("owner/{ownerId}")]
         public async Task<ActionResult<IEnumerable<object>>> GetArtworksByOwner(int ownerId)
         {
-            // Only Employees or Admins can access other people's inventory
             var userTypeClaim = User.FindFirst("usertype");
             var roleClaim = User.FindFirst(ClaimTypes.Role);
             if ((userTypeClaim == null || userTypeClaim.Value != "Employee") && (roleClaim == null || roleClaim.Value != "Administrator"))
@@ -169,8 +167,9 @@ namespace FineArtApi.Controllers
                 return Unauthorized(new { message = "Security Identity missing or invalid." });
             }
 
+            // FIXED: Use SubGroup logic
             var artists = await _context.Artworks
-                .Where(a => a.CreatedByProfileId == profileId || a.CollectionArtworks.Any(ca => ca.Collection.OwnerProfileId == profileId))
+                .Where(a => a.CreatedByProfileId == profileId || (a.SubGroup != null && a.SubGroup.Collection.OwnerProfileId == profileId))
                 .Where(a => a.Artist != null)
                 .Select(a => new {
                     a.Artist!.ArtistId,
@@ -190,16 +189,18 @@ namespace FineArtApi.Controllers
             [FromQuery] int? collectionId = null, 
             [FromQuery] int? artistId = null)
         {
+            // FIXED: Include SubGroup path
             var query = _context.Artworks
                 .Include(a => a.ArtworkImages)
                 .Include(a => a.Artist)
-                .Include(a => a.CollectionArtworks)
-                .ThenInclude(ca => ca.Collection)
+                .Include(a => a.SubGroup)
+                .ThenInclude(sg => sg.Collection)
                 .AsQueryable();
 
             if (collectionId.HasValue)
             {
-                query = query.Where(a => a.CollectionArtworks.Any(ca => ca.CollectionId == collectionId.Value));
+                // FIXED: Filter by SubGroup.CollectionId
+                query = query.Where(a => a.SubGroup != null && a.SubGroup.CollectionId == collectionId.Value);
             }
 
             if (artistId.HasValue)
@@ -218,7 +219,8 @@ namespace FineArtApi.Controllers
                 a.AcquisitionCost,
                 a.Status,
                 ImageUrl = a.ArtworkImages.OrderByDescending(i => i.IsPrimary).Select(i => i.BlobUrl).FirstOrDefault(),
-                Collections = a.CollectionArtworks.Select(ca => ca.Collection.CollectionName).ToList(),
+                // FIXED: Wrap single collection name in a list to maintain legacy JSON shape
+                Collections = a.SubGroup != null ? new List<string> { a.SubGroup.Collection.Name } : new List<string>(),
                 ArtworkImages = a.ArtworkImages.Select(i => new { Id = i.ImageId, i.BlobUrl, i.IsPrimary }).ToList()
             }).ToListAsync();
 
@@ -234,8 +236,9 @@ namespace FineArtApi.Controllers
                 .Include(a => a.ArtworkImages)
                 .Include(a => a.Artist) 
                 .Include(a => a.Edition)
-                .Include(a => a.CollectionArtworks)
-                .ThenInclude(ca => ca.Collection)
+                // FIXED: Include SubGroup path
+                .Include(a => a.SubGroup)
+                .ThenInclude(sg => sg.Collection)
                 .FirstOrDefaultAsync(a => a.ArtworkId == id);
 
             if (artwork == null) return NotFound();
@@ -265,15 +268,13 @@ namespace FineArtApi.Controllers
               ArtworkImages = (artwork.ArtworkImages ?? new List<ArtworkImage>())
                   .Select(i => new { Id = i.ImageId, i.BlobUrl, i.IsPrimary })
                   .ToList(),
-              Collections = artwork.CollectionArtworks != null 
-                  ? artwork.CollectionArtworks.Where(ca => ca.Collection != null)
-                                              .Select(ca => ca.Collection.CollectionName)
-                                              .ToList()
+              // FIXED: Map single SubGroup Collection to list
+              Collections = artwork.SubGroup != null && artwork.SubGroup.Collection != null
+                  ? new List<string> { artwork.SubGroup.Collection.Name }
                   : new List<string>()
             });
           } catch (Exception ex)
           {
-            // Return full stack trace for debugging
             return StatusCode(500, new { message = $"Error retrieving artwork {id}.", details = ex.Message, stackTrace = ex.ToString() });
           }
         }
@@ -287,7 +288,6 @@ namespace FineArtApi.Controllers
                 return Unauthorized(new { message = "Security Identity missing or invalid." });
             }
 
-            // Handle inline Edition creation if details are provided
             if (!string.IsNullOrEmpty(artworkDto.EditionType) || !string.IsNullOrEmpty(artworkDto.EditionMarking))
             {
                 var edition = new Edition
@@ -320,6 +320,7 @@ namespace FineArtApi.Controllers
                 CreatedByProfileId = profileId,
                 CreatedAt = DateTime.UtcNow,
                 LastModifiedAt = DateTime.UtcNow
+                // Note: SubGroup is not set on creation yet, user must add it to a collection/group later
             };
 
             _context.Artworks.Add(artwork);
@@ -334,7 +335,7 @@ namespace FineArtApi.Controllers
                     {
                         ArtworkId = artwork.ArtworkId,
                         BlobUrl = imageUrl,
-                        IsPrimary = (i == 0), // Set the first image as primary
+                        IsPrimary = (i == 0),
                         UploadedAt = DateTime.UtcNow
                     };
                     _context.ArtworkImages.Add(artworkImage);
@@ -390,7 +391,6 @@ namespace FineArtApi.Controllers
             return Ok(new { message = "Images added successfully." });
         }
 
-        // PUT: api/Artworks/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutArtwork(int id, [FromBody] ArtworkUpdateDto artworkDto)
         {
@@ -411,16 +411,13 @@ namespace FineArtApi.Controllers
                 return NotFound();
             }
 
-            // Verify ownership
             if (artwork.CreatedByProfileId != profileId)
             {
                 return Forbid();
             }
 
-            // Snapshot old state
             var oldState = new { artwork.CurrentLocationId, artwork.Medium, artwork.HeightCM, artwork.WidthCM, artwork.DepthCM, artwork.Frame, artwork.LotNumber, artwork.AcquisitionDate, artwork.ProvenanceText };
 
-            // Update fields
             artwork.CurrentLocationId = artworkDto.CurrentLocationId;
             artwork.Medium = artworkDto.Medium;
             artwork.HeightCM = artworkDto.HeightCM;
@@ -474,7 +471,6 @@ namespace FineArtApi.Controllers
                 return NotFound(new { message = "Asset not found in UK Registry." });
             }
 
-            // Snapshot old state
             var oldState = new { artwork.AcquisitionCost, artwork.AcquisitionDate, artwork.LastModifiedAt };
 
             artwork.AcquisitionCost = request.NewValuation;
@@ -493,7 +489,6 @@ namespace FineArtApi.Controllers
             }
         }
 
-        // DELETE: api/Artworks/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteArtwork(int id)
         {
@@ -506,10 +501,8 @@ namespace FineArtApi.Controllers
             var artwork = await _context.Artworks.FindAsync(id);
             if (artwork == null) return NotFound();
 
-            // Snapshot for audit
             var oldState = new { artwork.Title, artwork.ArtistId, artwork.AcquisitionCost };
 
-            // Capture ArtistId to check for cleanup after deletion
             var artistId = artwork.ArtistId;
 
             _context.Artworks.Remove(artwork);
@@ -517,7 +510,6 @@ namespace FineArtApi.Controllers
 
             await _auditService.LogAsync("Artworks", id, "DELETE", profileId, oldState, null);
 
-            // If this was the last artwork for the artist, delete the artist as well
             if (artistId.HasValue)
             {
                 var hasRemainingArtworks = await _context.Artworks.AnyAsync(a => a.ArtistId == artistId.Value);
