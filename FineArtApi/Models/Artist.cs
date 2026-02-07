@@ -21,6 +21,10 @@ namespace FineArtApi.Models
         [StringLength(100)]
         public string LastName { get; set; } = string.Empty;
 
+        // --- RESTORED PROPERTY ---
+        [StringLength(100)]
+        public string? Pseudonym { get; set; }
+
         [StringLength(100)]
         public string? Nationality { get; set; }
 
