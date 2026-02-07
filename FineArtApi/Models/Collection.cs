@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace FineArtApi.Models
 {
@@ -13,17 +14,23 @@ namespace FineArtApi.Models
 
         [Required]
         [StringLength(100)]
-        public string CollectionName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty; // Renamed from CollectionName to Name to match standard
 
         [StringLength(500)]
         public string? Description { get; set; }
 
-        public int? OwnerProfileId { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? UpdatedAt { get; set; }
+
+        public int OwnerProfileId { get; set; }
 
         [ForeignKey("OwnerProfileId")]
         public virtual UserProfile? Owner { get; set; }
 
-        // Navigation property to the junction table
-        public virtual ICollection<CollectionArtwork> CollectionArtworks { get; set; } = new List<CollectionArtwork>();
+        // --- NEW NAVIGATION ---
+        // Old: public virtual ICollection<CollectionArtwork> CollectionArtworks...
+        // New: A collection has many sub-groups
+        public virtual ICollection<SubGroup> SubGroups { get; set; } = new List<SubGroup>();
     }
 }

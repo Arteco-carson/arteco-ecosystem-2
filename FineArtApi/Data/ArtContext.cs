@@ -17,9 +17,11 @@ namespace FineArtApi.Data
         public DbSet<Appraisal> Appraisals { get; set; } = null!;
         public DbSet<UserProfile> UserProfiles { get; set; } = null!;
         
-        // NEW: Added for the many-to-many collection structure
+        // --- COLLECTION MANAGER TABLES ---
         public DbSet<Collection> Collections { get; set; } = null!;
-        public DbSet<CollectionArtwork> CollectionArtworks { get; set; } = null!;
+        public DbSet<SubGroup> SubGroups { get; set; } = null!; // NEW
+        // REMOVED: public DbSet<CollectionArtwork> CollectionArtworks...
+        
         public DbSet<Location> Locations { get; set; } = null!;
         public DbSet<UserLocation> UserLocations { get; set; } = null!;
         public DbSet<UserRole> UserRoles { get; set; } = null!;
@@ -48,19 +50,22 @@ namespace FineArtApi.Data
                 .Property(a => a.InsuranceValue)
                 .HasPrecision(19, 4);
 
-            // NEW: Configure Junction Table Composite Key
-            modelBuilder.Entity<CollectionArtwork>()
-                .HasKey(ca => new { ca.CollectionId, ca.ArtworkId });
+            // --- NEW: COLLECTION HIERARCHY ---
+            // 1. Collection -> SubGroups (Cascade Delete)
+            modelBuilder.Entity<SubGroup>()
+                .HasOne(s => s.Collection)
+                .WithMany(c => c.SubGroups)
+                .HasForeignKey(s => s.CollectionId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<CollectionArtwork>()
-                .HasOne(ca => ca.Artwork)
-                .WithMany(a => a.CollectionArtworks)
-                .HasForeignKey(ca => ca.ArtworkId);
+            // 2. SubGroup -> Artworks (Set Null on Delete)
+            modelBuilder.Entity<Artwork>()
+                .HasOne(a => a.SubGroup)
+                .WithMany(s => s.Artworks)
+                .HasForeignKey(a => a.SubGroupId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<CollectionArtwork>()
-                .HasOne(ca => ca.Collection)
-                .WithMany(c => c.CollectionArtworks)
-                .HasForeignKey(ca => ca.CollectionId);
+            // 3. REMOVED: All CollectionArtwork (Many-to-Many) configurations
 
             // PRESERVE: Relationship between Artwork and Images
             modelBuilder.Entity<ArtworkImage>()
@@ -83,15 +88,15 @@ namespace FineArtApi.Data
             // EXPLICITLY DEFINE RELATIONSHIPS FOR UserProfile
             modelBuilder.Entity<UserProfile>()
                 .HasOne(p => p.Role)
-                .WithMany() // UserRole does not have a navigation property back to UserProfile
+                .WithMany() 
                 .HasForeignKey(p => p.RoleId)
-                .IsRequired(); // RoleId is not nullable
+                .IsRequired(); 
 
             modelBuilder.Entity<UserProfile>()
                 .HasOne(p => p.UserType)
-                .WithMany() // UserType does not have a navigation property back to UserProfile
+                .WithMany() 
                 .HasForeignKey(p => p.UserTypeId)
-                .IsRequired(false); // UserTypeId is nullable
+                .IsRequired(false); 
         }
     }
 }

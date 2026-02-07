@@ -24,231 +24,232 @@ namespace FineArtApi.Controllers
             _auditService = auditService;
         }
 
-        // GET: api/collections/user
-        [HttpGet("user")]
-        public async Task<ActionResult<IEnumerable<object>>> GetUserCollections()
+        // --- HELPERS ---
+        private int? GetCurrentProfileId()
         {
-            return await GetCollections();
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id") ?? User.FindFirst("sub");
+            if (claim != null && int.TryParse(claim.Value, out int id))
+            {
+                return id;
+            }
+            return null;
         }
 
         // GET: api/collections
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetCollections()
         {
-            // Extract Profile ID from JWT token
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id") ?? User.FindFirst("sub");
-            
+            var profileId = GetCurrentProfileId();
+            if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
 
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int profileId))
-            {
-                return Unauthorized(new { message = "Security Identity missing or invalid." });
-            }
-
-            // Retrieve only collections belonging to this senior manager
-            // Retrieve only collections belonging to the authenticated user
             var collections = await _context.Collections
                 .Where(c => c.OwnerProfileId == profileId)
+                .Include(c => c.SubGroups) // Eager load sub-groups to count items
                 .Select(c => new {
                     c.CollectionId,
-                    c.CollectionName,
+                    c.Name, // Updated from CollectionName
                     c.Description,
-                    ArtworkCount = c.CollectionArtworks.Count()
+                    // Count all artworks across all subgroups in this collection
+                    ArtworkCount = c.SubGroups.SelectMany(sg => sg.Artworks).Count(),
+                    SubGroupCount = c.SubGroups.Count
                 })
+                .OrderByDescending(c => c.CollectionId) // Newest first
                 .ToListAsync();
 
             return Ok(collections);
         }
 
         // GET: api/collections/5
+        // Returns the hierarchy: Collection -> SubGroups -> Artworks (Summary)
         [HttpGet("{id}")]
         public async Task<ActionResult<object>> GetCollection(int id)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id") ?? User.FindFirst("sub");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int profileId))
-            {
-                return Unauthorized(new { message = "Security Identity missing or invalid." });
-            }
+            var profileId = GetCurrentProfileId();
+            if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
 
             var collection = await _context.Collections
-                .Where(c => c.CollectionId == id && c.OwnerProfileId == profileId)
-                .Select(c => new {
-                    c.CollectionId,
-                    c.CollectionName,
-                    c.Description,
-                    Artworks = c.CollectionArtworks.Select(ca => new {
-                        ca.Artwork.ArtworkId,
-                        ca.Artwork.Title,
-                        ArtistName = ca.Artwork.Artist != null ? $"{ca.Artwork.Artist.FirstName} {ca.Artwork.Artist.LastName}" : "Unknown",
-                        ImageUrl = ca.Artwork.ArtworkImages.OrderByDescending(i => i.IsPrimary).Select(i => i.BlobUrl).FirstOrDefault()
-                    }).ToList()
-                })
-                .FirstOrDefaultAsync();
+                .Include(c => c.SubGroups)
+                .ThenInclude(sg => sg.Artworks)
+                .ThenInclude(a => a.ArtworkImages) // Need image for thumbnail
+                .Include(c => c.SubGroups)
+                .ThenInclude(sg => sg.Artworks)
+                .ThenInclude(a => a.Artist) // Need artist name
+                .FirstOrDefaultAsync(c => c.CollectionId == id && c.OwnerProfileId == profileId);
 
-            if (collection == null)
-            {
-                return NotFound();
-            }
+            if (collection == null) return NotFound();
 
-            return Ok(collection);
-        }
-
-        // POST: api/collections
-        [HttpPost]
-        public async Task<ActionResult<Collection>> PostCollection([FromBody] CollectionCreateDto collectionDto)
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id") ?? User.FindFirst("sub");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int profileId))
-            {
-                return Unauthorized(new { message = "Security Identity missing or invalid." });
-            }
-
-            var collection = new Collection
-            {
-                CollectionName = collectionDto.CollectionName,
-                Description = collectionDto.Description,
-                OwnerProfileId = profileId
-            };
-
-            _context.Collections.Add(collection);
-            await _context.SaveChangesAsync();
-
-            if (collectionDto.ArtworkIds != null && collectionDto.ArtworkIds.Any())
-            {
-                var artworksToMove = collectionDto.ArtworkIds;
-
-                // Find and remove existing links for these artworks in other collections owned by the same user
-                var existingLinks = await _context.CollectionArtworks
-                    .Where(ca => artworksToMove.Contains(ca.ArtworkId) && ca.Collection.OwnerProfileId == profileId)
-                    .ToListAsync();
-
-                if (existingLinks.Any())
-                {
-                    _context.CollectionArtworks.RemoveRange(existingLinks);
-                }
-
-                // Add the new links for the new collection
-                foreach (var artworkId in artworksToMove)
-                {
-                    var newLink = new CollectionArtwork
-                    {
-                        CollectionId = collection.CollectionId,
-                        ArtworkId = artworkId,
-                        DateAdded = DateTime.UtcNow,
-                        AddedByProfileId = profileId
-                    };
-                    _context.CollectionArtworks.Add(newLink);
-                }
-
-                await _context.SaveChangesAsync();
-            }
-
+            // Transform to a clean shape for the UI
             var result = new
             {
                 collection.CollectionId,
-                collection.CollectionName,
+                collection.Name,
                 collection.Description,
-                ArtworkCount = collection.CollectionArtworks.Count
+                SubGroups = collection.SubGroups.Select(sg => new
+                {
+                    sg.SubGroupId,
+                    sg.Name,
+                    sg.Description,
+                    Artworks = sg.Artworks.Select(a => new
+                    {
+                        a.ArtworkId,
+                        a.Title,
+                        ArtistName = a.Artist != null ? $"{a.Artist.FirstName} {a.Artist.LastName}" : "Unknown",
+                        // Get the Primary image, or the first one available
+                        ImageUrl = a.ArtworkImages
+                            .OrderByDescending(i => i.IsPrimary)
+                            .Select(i => i.BlobUrl)
+                            .FirstOrDefault()
+                    }).ToList()
+                }).ToList()
             };
 
-            await _auditService.LogAsync("Collections", collection.CollectionId, "INSERT", profileId, null, result);
-
-            return CreatedAtAction(nameof(GetCollection), new { id = collection.CollectionId }, result);
+            return Ok(result);
         }
 
-        [HttpPost("{id}/artworks")]
-        public async Task<IActionResult> AddArtworksToCollection(int id, [FromBody] List<int> artworkIds)
+        // POST: api/collections
+        // Creates Collection AND Default SubGroup
+        [HttpPost]
+        public async Task<ActionResult<object>> CreateCollection([FromBody] CollectionCreateDto dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id") ?? User.FindFirst("sub");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int profileId))
+            var profileId = GetCurrentProfileId();
+            if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                return Unauthorized(new { message = "Security Identity missing or invalid." });
+                // 1. Create Collection
+                var collection = new Collection
+                {
+                    Name = dto.Name,
+                    Description = dto.Description,
+                    OwnerProfileId = profileId.Value,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Collections.Add(collection);
+                await _context.SaveChangesAsync();
+
+                // 2. Create Default SubGroup
+                var defaultGroup = new SubGroup
+                {
+                    Name = "-",
+                    Description = "Default Group",
+                    CollectionId = collection.CollectionId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.SubGroups.Add(defaultGroup);
+                await _context.SaveChangesAsync();
+
+                // 3. Move requested artworks to the default group
+                if (dto.ArtworkIds != null && dto.ArtworkIds.Any())
+                {
+                    var artworks = await _context.Artworks
+                        .Where(a => dto.ArtworkIds.Contains(a.ArtworkId))
+                        // Security: Ensure user owns these artworks or they are created by them
+                        .Where(a => a.CreatedByProfileId == profileId) 
+                        .ToListAsync();
+
+                    foreach (var art in artworks)
+                    {
+                        art.SubGroupId = defaultGroup.SubGroupId;
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+
+                await _auditService.LogAsync("Collections", collection.CollectionId, "INSERT", profileId.Value, null, new { collection.Name });
+
+                return CreatedAtAction(nameof(GetCollection), new { id = collection.CollectionId }, new { collection.CollectionId, collection.Name });
             }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        // POST: api/collections/subgroup
+        // Creates a new horizontal "Lane"
+        [HttpPost("subgroup")]
+        public async Task<ActionResult<object>> CreateSubGroup([FromBody] SubGroupCreateDto dto)
+        {
+            var profileId = GetCurrentProfileId();
+            if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
+
+            // Verify ownership of the parent collection
+            var collection = await _context.Collections.FindAsync(dto.CollectionId);
+            if (collection == null) return NotFound("Collection not found");
+            if (collection.OwnerProfileId != profileId) return Forbid();
+
+            var subGroup = new SubGroup
+            {
+                Name = dto.Name,
+                Description = dto.Description,
+                CollectionId = dto.CollectionId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.SubGroups.Add(subGroup);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync("SubGroups", subGroup.SubGroupId, "INSERT", profileId.Value, null, new { subGroup.Name });
+
+            return Ok(new { subGroup.SubGroupId, subGroup.Name });
+        }
+
+        // DELETE: api/collections/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCollection(int id)
+        {
+            var profileId = GetCurrentProfileId();
+            if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
 
             var collection = await _context.Collections.FindAsync(id);
             if (collection == null) return NotFound();
             if (collection.OwnerProfileId != profileId) return Forbid();
 
-            if (artworkIds != null && artworkIds.Any())
-            {
-                var existingIds = await _context.CollectionArtworks
-                    .Where(ca => ca.CollectionId == id && artworkIds.Contains(ca.ArtworkId))
-                    .Select(ca => ca.ArtworkId)
-                    .ToListAsync();
-
-                var newIds = artworkIds.Except(existingIds).ToList();
-
-                foreach (var artworkId in newIds)
-                {
-                    var artwork = await _context.Artworks.FindAsync(artworkId);
-                    if (artwork != null && (artwork.CreatedByProfileId == profileId || artwork.CollectionArtworks.Any(ca => ca.Collection.OwnerProfileId == profileId))) 
-                    {
-                         _context.CollectionArtworks.Add(new CollectionArtwork
-                        {
-                            CollectionId = id,
-                            ArtworkId = artworkId,
-                            DateAdded = DateTime.UtcNow,
-                            AddedByProfileId = profileId
-                        });
-                    }
-                }
-                await _context.SaveChangesAsync();
-            }
-
-            await _auditService.LogAsync("Collections", id, "UPDATE", profileId, null, new { Action = "AddArtworks", AddedArtworkIds = artworkIds });
-
-            return Ok(new { message = "Artworks added successfully." });
-        }
-
-        // DELETE: api/Collections/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCollection(int id)
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id") ?? User.FindFirst("sub");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int profileId))
-            {
-                return Unauthorized(new { message = "Security Identity missing or invalid." });
-            }
-
-            var collection = await _context.Collections.FindAsync(id);
-            if (collection == null)
-            {
-                return NotFound();
-            }
-
-            if (collection.OwnerProfileId != profileId)
-            {
-                return Forbid();
-            }
-
             // Snapshot for audit
-            var oldState = new { collection.CollectionName, collection.Description };
+            var auditState = new { collection.Name };
 
-            // 1. Remove the links in the junction table (CollectionArtworks)
-            var collectionArtworks = _context.CollectionArtworks.Where(ca => ca.CollectionId == id);
-            if (collectionArtworks.Any())
-            {
-                _context.CollectionArtworks.RemoveRange(collectionArtworks);
-            }
+            // Cascade delete is handled by DB for SubGroups, but Artworks need to be unlinked (SetNull)
+            // EF Core might handle SetNull automatically if configured, but let's be explicit if needed.
+            // (The DB Constraint ON DELETE SET NULL handles the artworks, so we just remove the collection).
 
-            // 2. Delete the Collection itself
             _context.Collections.Remove(collection);
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync("Collections", id, "DELETE", profileId, oldState, null);
+            await _auditService.LogAsync("Collections", id, "DELETE", profileId.Value, auditState, null);
 
             return NoContent();
         }
     }
 
+    // --- DTOs ---
     public class CollectionCreateDto
     {
         [Required]
         [StringLength(100)]
-        public string CollectionName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? Description { get; set; }
 
+        // Optional list of artwork IDs to immediately move into the default group
         public List<int> ArtworkIds { get; set; } = new List<int>();
+    }
+
+    public class SubGroupCreateDto
+    {
+        [Required]
+        public int CollectionId { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(500)]
+        public string? Description { get; set; }
     }
 }

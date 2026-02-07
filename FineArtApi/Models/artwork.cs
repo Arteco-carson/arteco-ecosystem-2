@@ -59,19 +59,22 @@ namespace FineArtApi.Models
         [ForeignKey("EditionId")]
         public virtual Edition? Edition { get; set; }
 
-        // Added to resolve CS1061 and match SQL schema for ownership filtering
         public int? CreatedByProfileId { get; set; }
         
         public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? LastModifiedAt { get; set; } = DateTime.UtcNow;
 
+        // --- NEW COLLECTION HIERARCHY ---
+        public int? SubGroupId { get; set; }
+
+        [ForeignKey("SubGroupId")]
+        public virtual SubGroup? SubGroup { get; set; }
+
         // --- NAVIGATION PROPERTIES ---
         
         public virtual ICollection<ArtworkImage> ArtworkImages { get; set; } = new List<ArtworkImage>();
         
-        public virtual ICollection<CollectionArtwork> CollectionArtworks { get; set; } = new List<CollectionArtwork>();
-
         public virtual ICollection<Appraisal> Appraisals { get; set; } = new List<Appraisal>();
 
         public virtual ICollection<DefectReport> DefectReports { get; set; } = new List<DefectReport>();
