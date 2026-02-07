@@ -11,7 +11,6 @@ using FineArtApi.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. AUTHENTICATION SERVICES (ISO27001 Compliance) ---
-// --- Update to redeploy
 builder.Services.AddAuthentication(options => {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -75,9 +74,6 @@ builder.Services.AddCors(options => {
             else
             {
                 // For production, create a strict policy that allows the web frontend and the mobile app.
-                // Mobile apps don't have a consistent origin URL; they often send a 'null' origin.
-                // We explicitly allow the web frontend URL and null origins, while blocking others.
-                // Security for the API is primarily handled by JWT authentication, not CORS.
                 policy.SetIsOriginAllowed(origin =>
                 {
                     // Allow the web frontend
@@ -100,15 +96,18 @@ builder.Services.AddCors(options => {
             }
         });
 });
-//updates
-builder.Services.AddControllers().AddJsonOptions(options => {
-    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; 
-});
+
+// --- JSON CONFIGURATION (The Fix) ---
+builder.Services.AddControllers()
+    .AddJsonOptions(options => {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        // FIX: Prevent 500 Errors due to Circular References (Collection -> SubGroup -> Collection)
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // --- FIX: Robust Connection String Fallback ---
-// If GetConnectionString returns empty (e.g. from empty appsettings.json), try other config locations
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     connectionString = builder.Configuration["DefaultConnection"];
@@ -141,11 +140,6 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Fine Art API V1");
 });
 
-if (app.Environment.IsDevelopment())
-{
-    // Development-specific configurations can go here
-}
-
 app.UseStaticFiles(); // Serve files from wwwroot
 app.UseCors("AllowSpecificOrigin");
 app.UseAuthentication();
@@ -153,5 +147,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-// Triggering deployment
