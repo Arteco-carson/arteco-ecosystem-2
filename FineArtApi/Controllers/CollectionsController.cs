@@ -24,7 +24,6 @@ namespace FineArtApi.Controllers
             _auditService = auditService;
         }
 
-        // --- HELPER: Extracts the Deepest SQL Error ---
         private string GetFullError(Exception ex)
         {
             var messages = new List<string> { ex.Message };
@@ -154,17 +153,16 @@ namespace FineArtApi.Controllers
                     subGroup.SubGroupId,
                     subGroup.Name,
                     subGroup.Description,
-                    CollectionName = subGroup.Collection.Name,
-                    CollectionId = subGroup.Collection.CollectionId,
+                    CollectionName = subGroup.Collection?.Name ?? "Unknown Collection",
+                    CollectionId = subGroup.Collection?.CollectionId,
                     Artworks = subGroup.Artworks.Select(a => new
                     {
                         a.ArtworkId,
                         a.Title,
                         ArtistName = a.Artist != null ? (a.Artist.Pseudonym ?? $"{a.Artist.FirstName} {a.Artist.LastName}") : "Unknown",
-                        ImageUrl = a.ArtworkImages
-                                .OrderByDescending(i => i.IsPrimary)
-                                .Select(i => i.BlobUrl)
-                                .FirstOrDefault(),
+                        ImageUrl = a.ArtworkImages != null 
+                            ? a.ArtworkImages.OrderByDescending(i => i.IsPrimary).Select(i => i.BlobUrl).FirstOrDefault()
+                            : null,
                          a.Medium,
                          a.YearCreated,
                          a.Dimensions
@@ -176,6 +174,53 @@ namespace FineArtApi.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Get Group Failed", error = GetFullError(ex) });
+            }
+        }
+
+        // POST: api/collections/subgroup/items
+        // --- NEW ENDPOINT: Add Items to Group ---
+        [HttpPost("subgroup/items")]
+        public async Task<IActionResult> AddItemsToGroup([FromBody] AddItemsToGroupDto dto)
+        {
+            try
+            {
+                var profileId = GetCurrentProfileId();
+                if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
+
+                // 1. Verify Ownership of Group
+                var subGroup = await _context.SubGroups
+                    .Include(sg => sg.Collection)
+                    .FirstOrDefaultAsync(sg => sg.SubGroupId == dto.SubGroupId);
+
+                if (subGroup == null) return NotFound("Group not found");
+                if (subGroup.Collection.OwnerProfileId != profileId) return Forbid();
+
+                // 2. Fetch Artworks (Only ones owned by user)
+                var artworks = await _context.Artworks
+                    .Where(a => dto.ArtworkIds.Contains(a.ArtworkId))
+                    .Where(a => a.CreatedByProfileId == profileId) // Security: Must own artwork
+                    .ToListAsync();
+
+                if (!artworks.Any()) return Ok(new { message = "No valid artworks found to add." });
+
+                // 3. Update Link
+                foreach (var art in artworks)
+                {
+                    art.SubGroupId = dto.SubGroupId;
+                    art.LastModifiedAt = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+                
+                try {
+                     await _auditService.LogAsync("SubGroups", subGroup.SubGroupId, "ADD_ITEMS", profileId.Value, null, new { Count = artworks.Count });
+                } catch { }
+
+                return Ok(new { message = "Items added successfully", count = artworks.Count });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Add Items Failed", error = GetFullError(ex) });
             }
         }
 
@@ -286,6 +331,7 @@ namespace FineArtApi.Controllers
         }
     }
 
+    // --- DTOs ---
     public class CollectionCreateDto
     {
         [Required]
@@ -309,5 +355,14 @@ namespace FineArtApi.Controllers
 
         [StringLength(500)]
         public string? Description { get; set; }
+    }
+
+    // New DTO for Adding Items
+    public class AddItemsToGroupDto
+    {
+        [Required]
+        public int SubGroupId { get; set; }
+        
+        public List<int> ArtworkIds { get; set; } = new List<int>();
     }
 }

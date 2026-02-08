@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Typography, Button, Table, Row, Col, Card, Image, Spin, Empty, theme, message } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Table, Row, Col, Card, Image, Spin, Empty, theme, message, Modal, List, Checkbox, Space } from 'antd';
+import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api'; 
 
@@ -8,9 +8,6 @@ const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
 
 const GroupDetail = () => {
-  // Note: Your router might use 'id' or 'groupId'. 
-  // Based on your previous logs, it seemed to be 'id', but your file said 'groupId'.
-  // This line handles both cases safely.
   const params = useParams();
   const groupId = params.groupId || params.id;
   
@@ -23,67 +20,91 @@ const GroupDetail = () => {
   const [artworks, setArtworks] = useState([]); 
   const [selectedArtwork, setSelectedArtwork] = useState(null); 
 
-  // --- ERROR HANDLER ---
-  const showErrorAlert = (context, error) => {
-    console.error(context, error);
-    let serverMsg = "Unknown Error";
-    let innerMsg = "";
-    
-    if (error.response && error.response.data) {
-        serverMsg = error.response.data.message || JSON.stringify(error.response.data);
-        innerMsg = error.response.data.error || error.response.data.inner || "";
-    } else {
-        serverMsg = error.message;
-    }
+  // --- Add Items Modal State ---
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [allArtworks, setAllArtworks] = useState([]);
+  const [selectedToAdd, setSelectedToAdd] = useState([]);
+  const [loadingAll, setLoadingAll] = useState(false);
 
-    // Aggressive Alert as requested
-    alert(`⚠️ DEBUG ERROR (${context}) ⚠️\n\nServer: ${serverMsg}\nDetails: ${innerMsg}`);
-    messageApi.error(`Error: ${serverMsg}`);
+  // --- Error Handler (Restored to standard UI) ---
+  const handleApiError = (context, error) => {
+    console.error(context, error);
+    let msg = error.message;
+    if (error.response && error.response.data) {
+        msg = error.response.data.message || "Server Error";
+    }
+    messageApi.error(msg);
   };
 
-  // --- Fetch Data ---
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Single call to the endpoint we created in CollectionsController
-        // It returns { subGroupId, name, ..., artworks: [] }
-        const response = await api.get(`/api/collections/subgroup/${groupId}?t=${new Date().getTime()}`);
-        
-        const data = response.data;
-        setGroup(data);
-        
-        // The controller sends 'artworks' inside the main object
-        const items = data.artworks || [];
-        setArtworks(items);
-        
-        if (items.length > 0) {
-            setSelectedArtwork(items[0]);
-        }
-      } catch (error) {
-        showErrorAlert("Fetch Group", error);
-      } finally {
-        setLoading(false);
+  // --- Fetch Group Data ---
+  const fetchGroupData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/api/collections/subgroup/${groupId}?t=${new Date().getTime()}`);
+      const data = response.data;
+      setGroup(data);
+      const items = data.artworks || [];
+      setArtworks(items);
+      
+      // Select first item by default if nothing selected yet
+      if (items.length > 0 && !selectedArtwork) {
+          setSelectedArtwork(items[0]);
       }
-    };
+    } catch (error) {
+      handleApiError("Fetch Group", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    if (groupId) fetchData();
+  useEffect(() => {
+    if (groupId) fetchGroupData();
   }, [groupId]);
+
+  // --- Fetch All Artworks (For Modal) ---
+  const openAddModal = async () => {
+    setIsAddModalOpen(true);
+    setLoadingAll(true);
+    try {
+        const response = await api.get('/api/artworks'); // Standard endpoint
+        setAllArtworks(response.data);
+    } catch (error) {
+        handleApiError("Load All Artworks", error);
+    } finally {
+        setLoadingAll(false);
+    }
+  };
+
+  // --- Submit Added Items ---
+  const handleAddItems = async () => {
+    if (selectedToAdd.length === 0) return;
+    try {
+        await api.post('/api/collections/subgroup/items', {
+            subGroupId: groupId,
+            artworkIds: selectedToAdd
+        });
+        messageApi.success("Items added to group");
+        setIsAddModalOpen(false);
+        setSelectedToAdd([]);
+        // Refresh data
+        await fetchGroupData();
+    } catch (error) {
+        handleApiError("Add Items", error);
+    }
+  };
 
   // --- Table Columns ---
   const columns = [
     {
       title: 'Art',
-      dataIndex: 'imageUrl', // Changed from 'artworkImages' to match backend DTO
+      dataIndex: 'imageUrl',
       key: 'image',
       width: 80,
-      render: (url) => {
-        return url ? (
+      render: (url) => url ? (
             <img src={url} alt="thumb" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
         ) : (
             <div style={{width: 40, height: 40, background: '#f0f0f0', borderRadius: 4}} />
-        );
-      }
+        )
     },
     {
       title: 'Title',
@@ -93,7 +114,7 @@ const GroupDetail = () => {
     },
     {
       title: 'Artist',
-      dataIndex: 'artistName', // Changed from 'artist' object to 'artistName' string (from DTO)
+      dataIndex: 'artistName', 
       key: 'artist',
       render: (text) => text || '-'
     },
@@ -108,8 +129,8 @@ const GroupDetail = () => {
     }
   ];
 
-  if (loading) return <div style={{ textAlign: 'center', marginTop: 100 }}><Spin size="large" /></div>;
-  if (!group) return <Empty description="Group not found" style={{ marginTop: 100 }} />;
+  if (loading && !group) return <div style={{ textAlign: 'center', marginTop: 100 }}><Spin size="large" /></div>;
+  if (!group && !loading) return <Empty description="Group not found" style={{ marginTop: 100 }} />;
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#fff' }}>
@@ -125,7 +146,7 @@ const GroupDetail = () => {
       <Content style={{ padding: '24px' }}>
         <Row gutter={32}>
           
-          {/* LEFT: Group Info (Narrow) */}
+          {/* LEFT: Group Info */}
           <Col xs={24} md={6}>
             <div style={{ position: 'sticky', top: 24 }}>
                 <Title level={2} style={{ marginTop: 0 }}>{group.name}</Title>
@@ -139,27 +160,20 @@ const GroupDetail = () => {
                             <Text>Items</Text>
                             <Text strong>{artworks.length}</Text>
                         </div>
-                        {/* Note: The backend DTO doesn't currently send CreatedAt for the Group, so we hide it to prevent "Invalid Date" */}
-                        {group.createdAt && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                                <Text>Created</Text>
-                                <Text type="secondary">{new Date(group.createdAt).toLocaleDateString()}</Text>
-                            </div>
-                        )}
                     </Card>
                 </div>
             </div>
           </Col>
 
-          {/* RIGHT: Main Area + List (Wide) */}
+          {/* RIGHT: Main Content */}
           <Col xs={24} md={18}>
             
-            {/* Main Area: Selected Item Preview */}
+            {/* Preview Area */}
             <div style={{ marginBottom: 32 }}>
                 {selectedArtwork ? (
                     <Card bodyStyle={{ padding: 0 }} style={{ overflow: 'hidden' }}>
                         <Row>
-                            <Col span={24} md={14} style={{ background: '#f9f9f9', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Col span={24} md={12} style={{ background: '#f9f9f9', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 {selectedArtwork.imageUrl ? (
                                     <Image 
                                         src={selectedArtwork.imageUrl} 
@@ -169,15 +183,13 @@ const GroupDetail = () => {
                                     <Empty description="No Image" />
                                 )}
                             </Col>
-                            <Col span={24} md={10} style={{ padding: 24 }}>
+                            <Col span={24} md={12} style={{ padding: 24 }}>
                                 <Title level={3}>{selectedArtwork.title}</Title>
-                                <Title level={5} type="secondary" style={{ marginTop: 0 }}>
-                                    {selectedArtwork.artistName || 'Unknown Artist'}
-                                </Title>
+                                <Title level={5} type="secondary">{selectedArtwork.artistName || 'Unknown Artist'}</Title>
                                 <div style={{ marginTop: 24 }}>
-                                    <Paragraph><strong>Medium:</strong> {selectedArtwork.medium || 'N/A'}</Paragraph>
-                                    <Paragraph><strong>Dimensions:</strong> {selectedArtwork.dimensions || 'N/A'}</Paragraph>
-                                    <Paragraph><strong>Year:</strong> {selectedArtwork.yearCreated || 'N/A'}</Paragraph>
+                                    <Paragraph><strong>Medium:</strong> {selectedArtwork.medium || '-'}</Paragraph>
+                                    <Paragraph><strong>Dimensions:</strong> {selectedArtwork.dimensions || '-'}</Paragraph>
+                                    <Paragraph><strong>Year:</strong> {selectedArtwork.yearCreated || '-'}</Paragraph>
                                 </div>
                                 <Button type="primary" onClick={() => navigate(`/artwork/${selectedArtwork.artworkId}`)} style={{ marginTop: 16 }}>
                                     Open Full Record
@@ -190,8 +202,14 @@ const GroupDetail = () => {
                 )}
             </div>
 
-            {/* List of Items */}
-            <Title level={4}>Items in this Group</Title>
+            {/* List Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Title level={4} style={{ margin: 0 }}>Items in this Group</Title>
+                <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
+                    Link Items
+                </Button>
+            </div>
+
             <Table 
                 dataSource={artworks} 
                 columns={columns} 
@@ -205,6 +223,40 @@ const GroupDetail = () => {
           </Col>
         </Row>
       </Content>
+
+      {/* --- Add Items Modal --- */}
+      <Modal 
+        title="Link Items to Group" 
+        open={isAddModalOpen} 
+        onCancel={() => setIsAddModalOpen(false)}
+        onOk={handleAddItems}
+        okText={`Add Selected (${selectedToAdd.length})`}
+        width={600}
+      >
+        {loadingAll ? <Spin style={{ display: 'block', margin: '20px auto' }} /> : (
+            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <Checkbox.Group style={{ width: '100%' }} value={selectedToAdd} onChange={setSelectedToAdd}>
+                    <List
+                        dataSource={allArtworks}
+                        renderItem={item => (
+                            <List.Item>
+                                <Checkbox value={item.artworkId} style={{ width: '100%' }}>
+                                    <Space>
+                                        {item.imageUrl && <img src={item.imageUrl} alt="art" style={{ width: 30, height: 30, borderRadius: 2 }} />}
+                                        <Text strong>{item.title}</Text>
+                                        <Text type="secondary">({item.artistName || 'Unknown'})</Text>
+                                        {/* Optional: Show if already in a group */}
+                                        {item.subGroupId && <Text type="warning" style={{ fontSize: 10 }}>[Currently in another group]</Text>}
+                                    </Space>
+                                </Checkbox>
+                            </List.Item>
+                        )}
+                    />
+                </Checkbox.Group>
+            </div>
+        )}
+      </Modal>
+
     </Layout>
   );
 };
