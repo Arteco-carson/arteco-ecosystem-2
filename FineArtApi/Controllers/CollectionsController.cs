@@ -29,7 +29,7 @@ namespace FineArtApi.Controllers
         }
 
         // --- HELPER: Upload Image to Blob Storage ---
-        private async Task<string> UploadImageAsync(IFormFile file)
+        private async Task<string?> UploadImageAsync(IFormFile file)
         {
             try
             {
@@ -38,8 +38,6 @@ namespace FineArtApi.Controllers
                 // Fallback for local testing if no Azure key is present
                 if (string.IsNullOrEmpty(connectionString)) 
                 {
-                    // In a real app, force the user to config Azure. 
-                    // For now, return a placeholder so it doesn't crash 500.
                     return "https://via.placeholder.com/400x400?text=Storage+Not+Configured";
                 }
 
@@ -250,6 +248,7 @@ namespace FineArtApi.Controllers
                         var newArtist = new Artist
                         {
                             LastName = dto.ArtistName, // Defaulting to LastName for single field
+                            Pseudonym = dto.ArtistName,
                             CreatedAt = DateTime.UtcNow,
                             LastModifiedAt = DateTime.UtcNow
                         };
@@ -296,9 +295,7 @@ namespace FineArtApi.Controllers
                     }
                 }
 
-                await _auditService.LogAsync("Artworks", artwork.ArtworkId, "INSERT_VIA_GROUP", profileId.Value, null, new { artwork.Title });
-
-                return Ok(new { message = "Item created successfully", artworkId = artwork.ArtworkId });
+                return Ok(new { message = "Item created", artworkId = artwork.ArtworkId });
             }
             catch (Exception ex)
             {

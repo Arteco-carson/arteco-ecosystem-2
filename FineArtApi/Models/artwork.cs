@@ -26,10 +26,10 @@ namespace FineArtApi.Models
 
         public string? Medium { get; set; }
         
-        // --- ADDED TO MATCH SQL (Fixes Build Error) ---
+        // --- ADDED: Missing properties required for "Add Item" feature ---
         public string? Dimensions { get; set; }
         public int? YearCreated { get; set; }
-        // ----------------------------------------------
+        // ---------------------------------------------------------------
 
         [Column(TypeName = "decimal(10, 2)")]
         public decimal? HeightCM { get; set; }
