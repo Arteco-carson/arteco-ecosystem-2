@@ -129,7 +129,7 @@ namespace FineArtApi.Controllers
             }
         }
 
-        // --- NEW: GET api/collections/subgroup/5 (Fixes 404 Error) ---
+        // GET: api/collections/subgroup/5
         [HttpGet("subgroup/{id}")]
         public async Task<ActionResult<object>> GetSubGroup(int id)
         {
@@ -148,7 +148,6 @@ namespace FineArtApi.Controllers
 
                 if (subGroup == null) return NotFound();
                 
-                // Security check: Ensure the user owns the collection this group belongs to
                 if (subGroup.Collection.OwnerProfileId != profileId) return Forbid();
 
                 var result = new
@@ -167,7 +166,7 @@ namespace FineArtApi.Controllers
                                 .OrderByDescending(i => i.IsPrimary)
                                 .Select(i => i.BlobUrl)
                                 .FirstOrDefault(),
-                         a.YearCreated,
+                         // REMOVED YearCreated to fix build error
                          a.Medium
                     }).ToList()
                 };
