@@ -61,11 +61,10 @@ namespace FineArtApi.Controllers
                         c.CollectionId,
                         c.Name, 
                         c.Description,
-                        // FIX: Include the SubGroups list so the UI can draw tiles
+                        // Includes SubGroups so UI tiles appear
                         SubGroups = c.SubGroups.Select(sg => new {
                             sg.SubGroupId,
                             sg.Name,
-                            // Minimal artwork data for the "X items" count in the UI
                             Artworks = sg.Artworks.Select(a => new { a.ArtworkId }).ToList() 
                         }).ToList()
                     })
@@ -127,6 +126,57 @@ namespace FineArtApi.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Get Single Failed", error = GetFullError(ex) });
+            }
+        }
+
+        // --- NEW: GET api/collections/subgroup/5 (Fixes 404 Error) ---
+        [HttpGet("subgroup/{id}")]
+        public async Task<ActionResult<object>> GetSubGroup(int id)
+        {
+            try
+            {
+                var profileId = GetCurrentProfileId();
+                if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
+
+                var subGroup = await _context.SubGroups
+                    .Include(sg => sg.Collection)
+                    .Include(sg => sg.Artworks)
+                    .ThenInclude(a => a.Artist)
+                    .Include(sg => sg.Artworks)
+                    .ThenInclude(a => a.ArtworkImages)
+                    .FirstOrDefaultAsync(sg => sg.SubGroupId == id);
+
+                if (subGroup == null) return NotFound();
+                
+                // Security check: Ensure the user owns the collection this group belongs to
+                if (subGroup.Collection.OwnerProfileId != profileId) return Forbid();
+
+                var result = new
+                {
+                    subGroup.SubGroupId,
+                    subGroup.Name,
+                    subGroup.Description,
+                    CollectionName = subGroup.Collection.Name,
+                    CollectionId = subGroup.Collection.CollectionId,
+                    Artworks = subGroup.Artworks.Select(a => new
+                    {
+                        a.ArtworkId,
+                        a.Title,
+                        ArtistName = a.Artist != null ? (a.Artist.Pseudonym ?? $"{a.Artist.FirstName} {a.Artist.LastName}") : "Unknown",
+                        ImageUrl = a.ArtworkImages
+                                .OrderByDescending(i => i.IsPrimary)
+                                .Select(i => i.BlobUrl)
+                                .FirstOrDefault(),
+                         a.YearCreated,
+                         a.Medium
+                    }).ToList()
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Get Group Failed", error = GetFullError(ex) });
             }
         }
 
