@@ -12,43 +12,42 @@ const CollectionsList = () => {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // FIX: Use message hook to prevent context/theme crashes
+  const [messageApi, contextHolder] = message.useMessage();
+  
   // Modal States
   const [isCollectionModalVisible, setIsCollectionModalVisible] = useState(false);
   const [isGroupModalVisible, setIsGroupModalVisible] = useState(false);
   const [selectedCollectionId, setSelectedCollectionId] = useState(null);
+  
+  // Forms
   const [form] = Form.useForm();
+  const [groupForm] = Form.useForm();
   
   const { token } = theme.useToken();
-  
-  // Environment variable for Portal URL
   const portalUrl = import.meta.env.VITE_PORTAL_URL || '/';
 
-  // --- HELPER: Aggressive Error Revealer ---
+  // --- ERROR HANDLER ---
   const showErrorAlert = (context, error) => {
     console.error(context, error);
-    
-    // Extract the hidden error message from the backend
     let serverMsg = "Unknown Error";
-    let innerMsg = "";
     
     if (error.response && error.response.data) {
-        // Check for our custom debug format
         serverMsg = error.response.data.message || JSON.stringify(error.response.data);
-        innerMsg = error.response.data.error || error.response.data.inner || "";
     } else {
         serverMsg = error.message;
     }
 
-    // Force the user to see it
-    alert(`⚠️ DEBUG ERROR (${context}) ⚠️\n\nServer Message: ${serverMsg}\n\nDetails: ${innerMsg}`);
-    message.error(`Error: ${serverMsg}`);
+    messageApi.error(`Error (${context}): ${serverMsg}`);
   };
 
-  // --- Data Fetching ---
+  // --- DATA FETCHING ---
   const fetchCollections = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/collections');
+      // Add timestamp to bypass cache
+      const response = await api.get(`/api/collections?t=${new Date().getTime()}`);
+      console.log("Loaded Collections:", response.data); 
       setCollections(response.data);
     } catch (error) {
       showErrorAlert("Loading Collections", error);
@@ -61,17 +60,17 @@ const CollectionsList = () => {
     fetchCollections();
   }, []);
 
-  // --- Handlers ---
+  // --- HANDLERS ---
   const handleCreateCollection = async (values) => {
     try {
       await api.post('/api/collections', {
         name: values.name,
         description: values.description
       });
-      message.success('Collection created');
+      messageApi.success('Collection created');
       setIsCollectionModalVisible(false);
       form.resetFields();
-      fetchCollections(); 
+      await fetchCollections(); // Refresh list immediately
     } catch (error) {
       showErrorAlert("Creating Collection", error);
     }
@@ -84,15 +83,16 @@ const CollectionsList = () => {
         name: values.name,
         description: values.description
       });
-      message.success('Group added');
+      messageApi.success('Group added');
       setIsGroupModalVisible(false);
-      form.resetFields();
-      fetchCollections(); 
+      groupForm.resetFields();
+      await fetchCollections(); // Refresh list immediately
     } catch (error) {
        showErrorAlert("Creating Group", error);
     }
   };
 
+  // This function is passed to the Row
   const openGroupModal = (collectionId) => {
     setSelectedCollectionId(collectionId);
     setIsGroupModalVisible(true);
@@ -100,6 +100,7 @@ const CollectionsList = () => {
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#fff' }}>
+      {contextHolder} {/* REQUIRED: Renders the message toast */}
       
       {/* Top Navigation Bar */}
       <div style={{ 
@@ -117,7 +118,6 @@ const CollectionsList = () => {
           shape="round" 
           icon={<PlusOutlined />} 
           onClick={() => setIsCollectionModalVisible(true)}
-          style={{ backgroundColor: token.colorPrimary }}
         >
           Add Collection
         </Button>
@@ -129,7 +129,6 @@ const CollectionsList = () => {
             <Spin size="large" />
           </div>
         ) : collections.length === 0 ? (
-          /* Empty State */
           <div style={{ textAlign: 'center', marginTop: '100px' }}>
             <Title level={3}>No Collections Yet</Title>
             <Text type="secondary">Create your first collection to start organizing your inventory.</Text>
@@ -145,12 +144,12 @@ const CollectionsList = () => {
             </Button>
           </div>
         ) : (
-          /* Populated State */
           <div>
             {collections.map(col => (
               <CollectionRow 
                 key={col.collectionId} 
                 collection={col} 
+                // Passed as a reference, because the Row calls it with the ID
                 onAddGroup={openGroupModal} 
               />
             ))}
@@ -167,7 +166,7 @@ const CollectionsList = () => {
         onOk={() => form.submit()}
         destroyOnClose
       >
-        <Form form={form} onFinish={handleCreateCollection} layout="vertical" preserve={false}>
+        <Form form={form} onFinish={handleCreateCollection} layout="vertical">
           <Form.Item name="name" label="Collection Name" rules={[{ required: true, message: 'Please enter a name' }]}>
             <Input placeholder="e.g. Summer Auction 2026" />
           </Form.Item>
@@ -181,10 +180,10 @@ const CollectionsList = () => {
         title="Add Group"
         open={isGroupModalVisible}
         onCancel={() => setIsGroupModalVisible(false)}
-        onOk={() => form.submit()}
+        onOk={() => groupForm.submit()}
         destroyOnClose
       >
-        <Form form={form} onFinish={handleCreateGroup} layout="vertical" preserve={false}>
+        <Form form={groupForm} onFinish={handleCreateGroup} layout="vertical">
           <Form.Item name="name" label="Group Name" rules={[{ required: true, message: 'Please enter a name' }]}>
             <Input placeholder="e.g. Oils, Sculptures" />
           </Form.Item>

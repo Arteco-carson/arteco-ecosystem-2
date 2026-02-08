@@ -17,14 +17,20 @@ const CollectionRow = ({ collection, onAddGroup }) => {
     }
   };
 
+  // Safe Accessor for SubGroups
+  const subGroups = collection.subGroups || [];
+
   return (
     <div style={{ marginBottom: '32px' }}>
       {/* Row Header */}
       <div style={{ marginBottom: '12px', paddingLeft: '4px' }}>
         <Title level={4} style={{ margin: 0 }}>
-          {collection.collectionName || collection.name}
+          {/* Support both naming conventions just in case */}
+          {collection.name || collection.collectionName}
         </Title>
-        <Text type="secondary">{collection.description}</Text>
+        {collection.description && (
+            <Text type="secondary">{collection.description}</Text>
+        )}
       </div>
 
       {/* The Scroll Container Wrapper */}
@@ -60,7 +66,7 @@ const CollectionRow = ({ collection, onAddGroup }) => {
           className="hide-scrollbar" // Add this class to CSS if needed to hide chrome scrollbar
         >
           {/* Sub-Group Tiles */}
-          {collection.subGroups && collection.subGroups.map((group) => (
+          {subGroups.map((group) => (
             <Card
               key={group.subGroupId}
               hoverable
@@ -89,6 +95,7 @@ const CollectionRow = ({ collection, onAddGroup }) => {
               shape="circle" 
               icon={<PlusOutlined />} 
               size="large"
+              // Pass the ID up to the parent
               onClick={() => onAddGroup(collection.collectionId)}
               title="Add Group"
             />

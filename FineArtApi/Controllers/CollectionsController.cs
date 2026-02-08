@@ -24,14 +24,23 @@ namespace FineArtApi.Controllers
             _auditService = auditService;
         }
 
-        // --- HELPERS ---
+        // --- HELPER: Extracts the Deepest SQL Error ---
+        private string GetFullError(Exception ex)
+        {
+            var messages = new List<string> { ex.Message };
+            var current = ex.InnerException;
+            while (current != null)
+            {
+                messages.Add(current.Message);
+                current = current.InnerException;
+            }
+            return string.Join(" | ", messages);
+        }
+
         private int? GetCurrentProfileId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id") ?? User.FindFirst("sub");
-            if (claim != null && int.TryParse(claim.Value, out int id))
-            {
-                return id;
-            }
+            if (claim != null && int.TryParse(claim.Value, out int id)) return id;
             return null;
         }
 
@@ -47,21 +56,26 @@ namespace FineArtApi.Controllers
                 var collections = await _context.Collections
                     .Where(c => c.OwnerProfileId == profileId)
                     .Include(c => c.SubGroups)
+                    .OrderByDescending(c => c.CollectionId)
                     .Select(c => new {
                         c.CollectionId,
                         c.Name, 
                         c.Description,
-                        ArtworkCount = c.SubGroups.SelectMany(sg => sg.Artworks).Count(),
-                        SubGroupCount = c.SubGroups.Count
+                        // FIX: Include the SubGroups list so the UI can draw tiles
+                        SubGroups = c.SubGroups.Select(sg => new {
+                            sg.SubGroupId,
+                            sg.Name,
+                            // Minimal artwork data for the "X items" count in the UI
+                            Artworks = sg.Artworks.Select(a => new { a.ArtworkId }).ToList() 
+                        }).ToList()
                     })
-                    .OrderByDescending(c => c.CollectionId)
                     .ToListAsync();
 
                 return Ok(collections);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Database Error", error = ex.Message, inner = ex.InnerException?.Message });
+                return StatusCode(500, new { message = "Get Failed", error = GetFullError(ex) });
             }
         }
 
@@ -112,7 +126,7 @@ namespace FineArtApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Database Error", error = ex.Message, inner = ex.InnerException?.Message });
+                return StatusCode(500, new { message = "Get Single Failed", error = GetFullError(ex) });
             }
         }
 
@@ -125,65 +139,46 @@ namespace FineArtApi.Controllers
                 var profileId = GetCurrentProfileId();
                 if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
 
-                using var transaction = await _context.Database.BeginTransactionAsync();
-                try
+                // 1. Create Collection
+                var collection = new Collection
                 {
-                    // 1. Create Collection
-                    var collection = new Collection
-                    {
-                        Name = dto.Name,
-                        Description = dto.Description,
-                        OwnerProfileId = profileId.Value,
-                        CreatedAt = DateTime.UtcNow,
-                        // FIX: Explicitly set this to prevent "0001-01-01" crashes
-                        LastModifiedAt = DateTime.UtcNow 
-                    };
+                    Name = dto.Name,
+                    Description = dto.Description,
+                    OwnerProfileId = profileId.Value,
+                    CreatedAt = DateTime.UtcNow,
+                    LastModifiedAt = DateTime.UtcNow
+                };
 
-                    _context.Collections.Add(collection);
-                    await _context.SaveChangesAsync();
+                _context.Collections.Add(collection);
+                await _context.SaveChangesAsync();
 
-                    // 2. Create Default SubGroup
-                    var defaultGroup = new SubGroup
-                    {
-                        Name = "-",
-                        Description = "Default Group",
-                        CollectionId = collection.CollectionId,
-                        CreatedAt = DateTime.UtcNow,
-                        // FIX: Explicitly set this too
-                        LastModifiedAt = DateTime.UtcNow
-                    };
+                // 2. Create Default SubGroup
+                var defaultGroup = new SubGroup
+                {
+                    Name = "-",
+                    Description = "Default Group",
+                    CollectionId = collection.CollectionId,
+                    CreatedAt = DateTime.UtcNow,
+                    LastModifiedAt = DateTime.UtcNow
+                };
 
-                    _context.SubGroups.Add(defaultGroup);
-                    await _context.SaveChangesAsync();
+                _context.SubGroups.Add(defaultGroup);
+                await _context.SaveChangesAsync();
 
-                    if (dto.ArtworkIds != null && dto.ArtworkIds.Any())
-                    {
-                        var artworks = await _context.Artworks
-                            .Where(a => dto.ArtworkIds.Contains(a.ArtworkId))
-                            .Where(a => a.CreatedByProfileId == profileId) 
-                            .ToListAsync();
-
-                        foreach (var art in artworks)
-                        {
-                            art.SubGroupId = defaultGroup.SubGroupId;
-                        }
-                        await _context.SaveChangesAsync();
-                    }
-
-                    await transaction.CommitAsync();
+                try 
+                {
                     await _auditService.LogAsync("Collections", collection.CollectionId, "INSERT", profileId.Value, null, new { collection.Name });
-
-                    return CreatedAtAction(nameof(GetCollection), new { id = collection.CollectionId }, new { collection.CollectionId, collection.Name });
                 }
-                catch (Exception)
+                catch (Exception auditEx)
                 {
-                    await transaction.RollbackAsync();
-                    throw;
+                    Console.WriteLine("Audit Log Failed: " + auditEx.Message);
                 }
+
+                return CreatedAtAction(nameof(GetCollection), new { id = collection.CollectionId }, new { collection.CollectionId, collection.Name });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Create Failed", error = ex.Message, inner = ex.InnerException?.Message });
+                return StatusCode(500, new { message = "Create Failed", error = GetFullError(ex) });
             }
         }
 
@@ -206,19 +201,21 @@ namespace FineArtApi.Controllers
                     Description = dto.Description,
                     CollectionId = dto.CollectionId,
                     CreatedAt = DateTime.UtcNow,
-                    LastModifiedAt = DateTime.UtcNow // FIX
+                    LastModifiedAt = DateTime.UtcNow
                 };
 
                 _context.SubGroups.Add(subGroup);
                 await _context.SaveChangesAsync();
 
-                await _auditService.LogAsync("SubGroups", subGroup.SubGroupId, "INSERT", profileId.Value, null, new { subGroup.Name });
+                try {
+                     await _auditService.LogAsync("SubGroups", subGroup.SubGroupId, "INSERT", profileId.Value, null, new { subGroup.Name });
+                } catch { }
 
                 return Ok(new { subGroup.SubGroupId, subGroup.Name });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Create Group Failed", error = ex.Message, inner = ex.InnerException?.Message });
+                return StatusCode(500, new { message = "Create Group Failed", error = GetFullError(ex) });
             }
         }
 
@@ -235,18 +232,14 @@ namespace FineArtApi.Controllers
                 if (collection == null) return NotFound();
                 if (collection.OwnerProfileId != profileId) return Forbid();
 
-                var auditState = new { collection.Name };
-
                 _context.Collections.Remove(collection);
                 await _context.SaveChangesAsync();
-
-                await _auditService.LogAsync("Collections", id, "DELETE", profileId.Value, auditState, null);
 
                 return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Delete Failed", error = ex.Message, inner = ex.InnerException?.Message });
+                return StatusCode(500, new { message = "Delete Failed", error = GetFullError(ex) });
             }
         }
     }
