@@ -2,32 +2,35 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization; // Required for JsonIgnore
+using System.Text.Json.Serialization;
 
 namespace FineArtApi.Models
 {
-    [Table("SubGroups")]
+    [Table("SubGroups", Schema = "dbo")]
     public class SubGroup
     {
         [Key]
         public int SubGroupId { get; set; }
 
         [Required]
-        [MaxLength(100)]
-        public string Name { get; set; } = string.Empty;
+        [StringLength(100)]
+        public string Name { get; set; } = string.Empty; // Fixed: Was SubGroupName
 
-        [MaxLength(500)]
-        public string Description { get; set; } = string.Empty;
+        [StringLength(500)]
+        public string? Description { get; set; }
 
+        [Required]
         public int CollectionId { get; set; }
-
-        [ForeignKey("CollectionId")]
-        [JsonIgnore] // <--- STOPS THE INFINITE LOOP
-        public virtual Collection? Collection { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation: A sub-group contains many artworks
+        // --- FIX: Added Missing Property ---
+        public DateTime LastModifiedAt { get; set; } = DateTime.UtcNow;
+
+        // --- NAVIGATION ---
+        [JsonIgnore] // Prevents upward loop
+        public virtual Collection? Collection { get; set; }
+
         public virtual ICollection<Artwork> Artworks { get; set; } = new List<Artwork>();
     }
 }

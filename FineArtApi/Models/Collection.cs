@@ -14,23 +14,23 @@ namespace FineArtApi.Models
 
         [Required]
         [StringLength(100)]
-        public string Name { get; set; } = string.Empty; // Renamed from CollectionName to Name to match standard
+        public string Name { get; set; } = string.Empty; // Fixed: Was CollectionName
 
         [StringLength(500)]
         public string? Description { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        public DateTime? UpdatedAt { get; set; }
-
+        [Required]
         public int OwnerProfileId { get; set; }
 
-        [ForeignKey("OwnerProfileId")]
-        public virtual UserProfile? Owner { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        // --- FIX: Added Missing Property ---
+        public DateTime LastModifiedAt { get; set; } = DateTime.UtcNow;
 
-        // --- NEW NAVIGATION ---
-        // Old: public virtual ICollection<CollectionArtwork> CollectionArtworks...
-        // New: A collection has many sub-groups
+        // --- NAVIGATION ---
+        [JsonIgnore]
+        public virtual UserProfile? OwnerProfile { get; set; }
+
         public virtual ICollection<SubGroup> SubGroups { get; set; } = new List<SubGroup>();
     }
 }
