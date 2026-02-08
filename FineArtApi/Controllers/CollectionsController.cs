@@ -61,7 +61,6 @@ namespace FineArtApi.Controllers
                         c.CollectionId,
                         c.Name, 
                         c.Description,
-                        // Includes SubGroups so UI tiles appear
                         SubGroups = c.SubGroups.Select(sg => new {
                             sg.SubGroupId,
                             sg.Name,
@@ -166,8 +165,9 @@ namespace FineArtApi.Controllers
                                 .OrderByDescending(i => i.IsPrimary)
                                 .Select(i => i.BlobUrl)
                                 .FirstOrDefault(),
-                         // REMOVED YearCreated to fix build error
-                         a.Medium
+                         a.Medium,
+                         a.YearCreated,
+                         a.Dimensions
                     }).ToList()
                 };
 
@@ -188,7 +188,6 @@ namespace FineArtApi.Controllers
                 var profileId = GetCurrentProfileId();
                 if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
 
-                // 1. Create Collection
                 var collection = new Collection
                 {
                     Name = dto.Name,
@@ -201,7 +200,6 @@ namespace FineArtApi.Controllers
                 _context.Collections.Add(collection);
                 await _context.SaveChangesAsync();
 
-                // 2. Create Default SubGroup
                 var defaultGroup = new SubGroup
                 {
                     Name = "-",
@@ -214,14 +212,9 @@ namespace FineArtApi.Controllers
                 _context.SubGroups.Add(defaultGroup);
                 await _context.SaveChangesAsync();
 
-                try 
-                {
+                try {
                     await _auditService.LogAsync("Collections", collection.CollectionId, "INSERT", profileId.Value, null, new { collection.Name });
-                }
-                catch (Exception auditEx)
-                {
-                    Console.WriteLine("Audit Log Failed: " + auditEx.Message);
-                }
+                } catch { }
 
                 return CreatedAtAction(nameof(GetCollection), new { id = collection.CollectionId }, new { collection.CollectionId, collection.Name });
             }
@@ -293,7 +286,6 @@ namespace FineArtApi.Controllers
         }
     }
 
-    // --- DTOs ---
     public class CollectionCreateDto
     {
         [Required]

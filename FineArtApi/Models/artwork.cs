@@ -25,6 +25,11 @@ namespace FineArtApi.Models
         public int? CurrentLocationId { get; set; }
 
         public string? Medium { get; set; }
+        
+        // --- ADDED TO MATCH SQL (Fixes Build Error) ---
+        public string? Dimensions { get; set; }
+        public int? YearCreated { get; set; }
+        // ----------------------------------------------
 
         [Column(TypeName = "decimal(10, 2)")]
         public decimal? HeightCM { get; set; }
