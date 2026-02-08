@@ -108,6 +108,7 @@ builder.Services.AddControllers()
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // --- FIX: Robust Connection String Fallback ---
+// If GetConnectionString returns empty (e.g. from empty appsettings.json), try other config locations
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     connectionString = builder.Configuration["DefaultConnection"];
@@ -128,6 +129,10 @@ builder.Services.AddDbContext<ArtContext>(options =>
 // Register the Audit Service
 builder.Services.AddScoped<IAuditService, AuditService>();
 
+// --- CHECK: Is BlobService missing? ---
+// If your app uses images, ensure this line exists. If you removed it earlier, uncomment the line below:
+// builder.Services.AddScoped<IBlobService, BlobService>(); 
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -139,6 +144,11 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Fine Art API V1");
 });
+
+if (app.Environment.IsDevelopment())
+{
+    // Development-specific configurations can go here
+}
 
 app.UseStaticFiles(); // Serve files from wwwroot
 app.UseCors("AllowSpecificOrigin");

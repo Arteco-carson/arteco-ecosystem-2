@@ -21,7 +21,7 @@ namespace FineArtApi.Models
         [StringLength(100)]
         public string LastName { get; set; } = string.Empty;
 
-        // --- RESTORED PROPERTY ---
+        // --- RESTORED PROPERTY (Fixes Build Failure) ---
         [StringLength(100)]
         public string? Pseudonym { get; set; }
 
