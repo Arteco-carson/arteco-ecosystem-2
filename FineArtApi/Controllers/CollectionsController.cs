@@ -35,7 +35,6 @@ namespace FineArtApi.Controllers
             {
                 var connectionString = _configuration["AzureStorage:ConnectionString"];
                 
-                // Fallback for local testing if no Azure key is present
                 if (string.IsNullOrEmpty(connectionString)) 
                 {
                     return "https://via.placeholder.com/400x400?text=Storage+Not+Configured";
@@ -55,7 +54,7 @@ namespace FineArtApi.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Blob Upload Failed: {ex.Message}");
-                return null; // Handle gracefully
+                return null; 
             }
         }
 
@@ -181,6 +180,14 @@ namespace FineArtApi.Controllers
 
                 if (subGroup == null) return NotFound();
                 
+                // --- SAFETY CHECK (Updated) ---
+                // If the collection was deleted but the group remains (orphaned), 
+                // we handle it gracefully instead of crashing on null reference.
+                if (subGroup.Collection == null) 
+                {
+                    return StatusCode(500, new { message = "Data Integrity Error: SubGroup has no parent Collection." });
+                }
+
                 if (subGroup.Collection.OwnerProfileId != profileId) return Forbid();
 
                 var result = new
@@ -188,8 +195,8 @@ namespace FineArtApi.Controllers
                     subGroup.SubGroupId,
                     subGroup.Name,
                     subGroup.Description,
-                    CollectionName = subGroup.Collection?.Name ?? "Unknown Collection",
-                    CollectionId = subGroup.Collection?.CollectionId,
+                    CollectionName = subGroup.Collection.Name,
+                    CollectionId = subGroup.Collection.CollectionId,
                     Artworks = subGroup.Artworks.Select(a => new
                     {
                         a.ArtworkId,
@@ -213,7 +220,7 @@ namespace FineArtApi.Controllers
             }
         }
 
-        // --- NEW: CREATE ITEM IN GROUP (With Image & Artist Logic) ---
+        // --- CREATE ITEM IN GROUP ---
         [HttpPost("subgroup/{subGroupId}/item")]
         public async Task<IActionResult> CreateArtworkInGroup(int subGroupId, [FromForm] CreateArtworkInGroupDto dto)
         {
@@ -222,19 +229,17 @@ namespace FineArtApi.Controllers
                 var profileId = GetCurrentProfileId();
                 if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
 
-                // 1. Verify Group Ownership
                 var subGroup = await _context.SubGroups
                     .Include(sg => sg.Collection)
                     .FirstOrDefaultAsync(sg => sg.SubGroupId == subGroupId);
 
                 if (subGroup == null) return NotFound("Group not found");
-                if (subGroup.Collection.OwnerProfileId != profileId) return Forbid();
+                if (subGroup.Collection == null || subGroup.Collection.OwnerProfileId != profileId) return Forbid();
 
-                // 2. Handle Artist (Text -> ID)
+                // Handle Artist
                 int? artistId = null;
                 if (!string.IsNullOrWhiteSpace(dto.ArtistName))
                 {
-                    // Simple lookup: Does this name exist?
                     var existingArtist = await _context.Artists
                         .FirstOrDefaultAsync(a => a.LastName == dto.ArtistName || a.Pseudonym == dto.ArtistName);
 
@@ -244,10 +249,9 @@ namespace FineArtApi.Controllers
                     }
                     else
                     {
-                        // Create new artist "Just in Time"
                         var newArtist = new Artist
                         {
-                            LastName = dto.ArtistName, // Defaulting to LastName for single field
+                            LastName = dto.ArtistName, 
                             Pseudonym = dto.ArtistName,
                             CreatedAt = DateTime.UtcNow,
                             LastModifiedAt = DateTime.UtcNow
@@ -258,7 +262,7 @@ namespace FineArtApi.Controllers
                     }
                 }
 
-                // 3. Create Artwork Record
+                // Create Artwork
                 var artwork = new Artwork
                 {
                     Title = dto.Title,
@@ -276,7 +280,7 @@ namespace FineArtApi.Controllers
                 _context.Artworks.Add(artwork);
                 await _context.SaveChangesAsync();
 
-                // 4. Handle Image Upload
+                // Handle Image
                 if (dto.ImageFile != null)
                 {
                     var blobUrl = await UploadImageAsync(dto.ImageFile);
@@ -436,7 +440,6 @@ namespace FineArtApi.Controllers
         public string? Description { get; set; }
     }
 
-    // New DTO for Creating Item with File
     public class CreateArtworkInGroupDto
     {
         [Required]
