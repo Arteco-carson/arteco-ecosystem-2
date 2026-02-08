@@ -1,42 +1,67 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Typography, Button, Table, Row, Col, Card, Image, Spin, Empty, theme } from 'antd';
-import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Table, Row, Col, Card, Image, Spin, Empty, theme, message } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../api'; // Local api import as per your structure
+import api from '../api'; 
 
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
 
 const GroupDetail = () => {
-  const { groupId } = useParams();
+  // Note: Your router might use 'id' or 'groupId'. 
+  // Based on your previous logs, it seemed to be 'id', but your file said 'groupId'.
+  // This line handles both cases safely.
+  const params = useParams();
+  const groupId = params.groupId || params.id;
+  
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const [messageApi, contextHolder] = message.useMessage();
   
   const [loading, setLoading] = useState(true);
-  const [group, setGroup] = useState(null); // Metadata
-  const [artworks, setArtworks] = useState([]); // Items
-  const [selectedArtwork, setSelectedArtwork] = useState(null); // For Main Area
+  const [group, setGroup] = useState(null); 
+  const [artworks, setArtworks] = useState([]); 
+  const [selectedArtwork, setSelectedArtwork] = useState(null); 
+
+  // --- ERROR HANDLER ---
+  const showErrorAlert = (context, error) => {
+    console.error(context, error);
+    let serverMsg = "Unknown Error";
+    let innerMsg = "";
+    
+    if (error.response && error.response.data) {
+        serverMsg = error.response.data.message || JSON.stringify(error.response.data);
+        innerMsg = error.response.data.error || error.response.data.inner || "";
+    } else {
+        serverMsg = error.message;
+    }
+
+    // Aggressive Alert as requested
+    alert(`⚠️ DEBUG ERROR (${context}) ⚠️\n\nServer: ${serverMsg}\nDetails: ${innerMsg}`);
+    messageApi.error(`Error: ${serverMsg}`);
+  };
 
   // --- Fetch Data ---
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // 1. Get Group Metadata (We might need a specific endpoint or just fetch the collection)
-        // For efficiency, let's assume we have an endpoint for the group details directly
-        const groupRes = await api.get(`/api/collections/subgroup/${groupId}`);
-        setGroup(groupRes.data);
-
-        // 2. Get Items in Group
-        const itemsRes = await api.get(`/api/collections/subgroup/${groupId}/items`);
-        setArtworks(itemsRes.data);
+        // Single call to the endpoint we created in CollectionsController
+        // It returns { subGroupId, name, ..., artworks: [] }
+        const response = await api.get(`/api/collections/subgroup/${groupId}?t=${new Date().getTime()}`);
         
-        // Default to first item if available
-        if (itemsRes.data && itemsRes.data.length > 0) {
-            setSelectedArtwork(itemsRes.data[0]);
+        const data = response.data;
+        setGroup(data);
+        
+        // The controller sends 'artworks' inside the main object
+        const items = data.artworks || [];
+        setArtworks(items);
+        
+        if (items.length > 0) {
+            setSelectedArtwork(items[0]);
         }
       } catch (error) {
-        console.error("Failed to fetch group", error);
+        showErrorAlert("Fetch Group", error);
       } finally {
         setLoading(false);
       }
@@ -49,12 +74,15 @@ const GroupDetail = () => {
   const columns = [
     {
       title: 'Art',
-      dataIndex: 'artworkImages',
+      dataIndex: 'imageUrl', // Changed from 'artworkImages' to match backend DTO
       key: 'image',
       width: 80,
-      render: (images) => {
-        const thumb = images && images.length > 0 ? images.find(i => i.isPrimary)?.blobUrl || images[0].blobUrl : null;
-        return thumb ? <img src={thumb} alt="thumb" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} /> : <div style={{width: 40, height: 40, background: '#f0f0f0', borderRadius: 4}} />;
+      render: (url) => {
+        return url ? (
+            <img src={url} alt="thumb" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
+        ) : (
+            <div style={{width: 40, height: 40, background: '#f0f0f0', borderRadius: 4}} />
+        );
       }
     },
     {
@@ -65,9 +93,9 @@ const GroupDetail = () => {
     },
     {
       title: 'Artist',
-      dataIndex: 'artist',
+      dataIndex: 'artistName', // Changed from 'artist' object to 'artistName' string (from DTO)
       key: 'artist',
-      render: (artist) => artist ? `${artist.firstName} ${artist.lastName}` : '-'
+      render: (text) => text || '-'
     },
     {
         title: '',
@@ -85,6 +113,7 @@ const GroupDetail = () => {
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#fff' }}>
+      {contextHolder}
       
       {/* Header */}
       <div style={{ padding: '16px 24px', borderBottom: '1px solid #f0f0f0' }}>
@@ -100,6 +129,7 @@ const GroupDetail = () => {
           <Col xs={24} md={6}>
             <div style={{ position: 'sticky', top: 24 }}>
                 <Title level={2} style={{ marginTop: 0 }}>{group.name}</Title>
+                <Title level={5} type="secondary" style={{ marginTop: 0 }}>{group.collectionName}</Title>
                 <Paragraph type="secondary">{group.description || "No description provided."}</Paragraph>
                 
                 <div style={{ marginTop: 24 }}>
@@ -109,10 +139,13 @@ const GroupDetail = () => {
                             <Text>Items</Text>
                             <Text strong>{artworks.length}</Text>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                            <Text>Created</Text>
-                            <Text type="secondary">{new Date(group.createdAt).toLocaleDateString()}</Text>
-                        </div>
+                        {/* Note: The backend DTO doesn't currently send CreatedAt for the Group, so we hide it to prevent "Invalid Date" */}
+                        {group.createdAt && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+                                <Text>Created</Text>
+                                <Text type="secondary">{new Date(group.createdAt).toLocaleDateString()}</Text>
+                            </div>
+                        )}
                     </Card>
                 </div>
             </div>
@@ -126,25 +159,25 @@ const GroupDetail = () => {
                 {selectedArtwork ? (
                     <Card bodyStyle={{ padding: 0 }} style={{ overflow: 'hidden' }}>
                         <Row>
-                            <Col span={14} style={{ background: '#f9f9f9', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {selectedArtwork.artworkImages && selectedArtwork.artworkImages.length > 0 ? (
+                            <Col span={24} md={14} style={{ background: '#f9f9f9', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {selectedArtwork.imageUrl ? (
                                     <Image 
-                                        src={selectedArtwork.artworkImages.find(i => i.isPrimary)?.blobUrl || selectedArtwork.artworkImages[0].blobUrl} 
+                                        src={selectedArtwork.imageUrl} 
                                         style={{ maxHeight: '400px', objectFit: 'contain' }}
                                     />
                                 ) : (
                                     <Empty description="No Image" />
                                 )}
                             </Col>
-                            <Col span={10} style={{ padding: 24 }}>
+                            <Col span={24} md={10} style={{ padding: 24 }}>
                                 <Title level={3}>{selectedArtwork.title}</Title>
                                 <Title level={5} type="secondary" style={{ marginTop: 0 }}>
-                                    {selectedArtwork.artist ? `${selectedArtwork.artist.firstName} ${selectedArtwork.artist.lastName}` : 'Unknown Artist'}
+                                    {selectedArtwork.artistName || 'Unknown Artist'}
                                 </Title>
                                 <div style={{ marginTop: 24 }}>
-                                    <Paragraph><strong>Medium:</strong> {selectedArtwork.medium}</Paragraph>
-                                    <Paragraph><strong>Dimensions:</strong> {selectedArtwork.heightCM} x {selectedArtwork.widthCM} cm</Paragraph>
-                                    <Paragraph><strong>Valuation:</strong> £{selectedArtwork.acquisitionCost?.toLocaleString()}</Paragraph>
+                                    <Paragraph><strong>Medium:</strong> {selectedArtwork.medium || 'N/A'}</Paragraph>
+                                    <Paragraph><strong>Dimensions:</strong> {selectedArtwork.dimensions || 'N/A'}</Paragraph>
+                                    <Paragraph><strong>Year:</strong> {selectedArtwork.yearCreated || 'N/A'}</Paragraph>
                                 </div>
                                 <Button type="primary" onClick={() => navigate(`/artwork/${selectedArtwork.artworkId}`)} style={{ marginTop: 16 }}>
                                     Open Full Record

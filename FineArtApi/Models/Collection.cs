@@ -14,17 +14,17 @@ namespace FineArtApi.Models
 
         [Required]
         [StringLength(100)]
-        public string Name { get; set; } = string.Empty; // Fixed: Was CollectionName
+        public string Name { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? Description { get; set; }
 
-        [Required]
-        public int OwnerProfileId { get; set; }
+        // --- FIX: Changed to Nullable (int?) to match Database ---
+        // This prevents the "500 Error" when reading existing data
+        public int? OwnerProfileId { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
-        // --- FIX: Added Missing Property ---
         public DateTime LastModifiedAt { get; set; } = DateTime.UtcNow;
 
         // --- NAVIGATION ---
