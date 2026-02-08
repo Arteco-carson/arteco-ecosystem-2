@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Typography, Button, Table, Row, Col, Card, Image, Spin, Empty, theme, message, Modal, List, Checkbox, Space } from 'antd';
-import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Table, Row, Col, Card, Image, Spin, Empty, theme, message, Modal, Form, Input, Upload, InputNumber } from 'antd';
+import { ArrowLeftOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api'; 
 
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
+const { TextArea } = Input;
 
 const GroupDetail = () => {
   const params = useParams();
@@ -20,13 +21,12 @@ const GroupDetail = () => {
   const [artworks, setArtworks] = useState([]); 
   const [selectedArtwork, setSelectedArtwork] = useState(null); 
 
-  // --- Add Items Modal State ---
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [allArtworks, setAllArtworks] = useState([]);
-  const [selectedToAdd, setSelectedToAdd] = useState([]);
-  const [loadingAll, setLoadingAll] = useState(false);
+  // --- Create Item Modal State ---
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createForm] = Form.useForm();
+  const [fileList, setFileList] = useState([]);
 
-  // --- Error Handler (Restored to standard UI) ---
+  // --- Error Handler ---
   const handleApiError = (context, error) => {
     console.error(context, error);
     let msg = error.message;
@@ -46,7 +46,6 @@ const GroupDetail = () => {
       const items = data.artworks || [];
       setArtworks(items);
       
-      // Select first item by default if nothing selected yet
       if (items.length > 0 && !selectedArtwork) {
           setSelectedArtwork(items[0]);
       }
@@ -61,35 +60,35 @@ const GroupDetail = () => {
     if (groupId) fetchGroupData();
   }, [groupId]);
 
-  // --- Fetch All Artworks (For Modal) ---
-  const openAddModal = async () => {
-    setIsAddModalOpen(true);
-    setLoadingAll(true);
+  // --- Handle Create Item ---
+  const handleCreateItem = async (values) => {
     try {
-        const response = await api.get('/api/artworks'); // Standard endpoint
-        setAllArtworks(response.data);
-    } catch (error) {
-        handleApiError("Load All Artworks", error);
-    } finally {
-        setLoadingAll(false);
-    }
-  };
+        const formData = new FormData();
+        formData.append('title', values.title);
+        if (values.artistName) formData.append('artistName', values.artistName);
+        if (values.description) formData.append('description', values.description);
+        if (values.medium) formData.append('medium', values.medium);
+        if (values.dimensions) formData.append('dimensions', values.dimensions);
+        if (values.yearCreated) formData.append('yearCreated', values.yearCreated);
+        
+        // Append Image if exists
+        if (fileList.length > 0) {
+            formData.append('imageFile', fileList[0].originFileObj);
+        }
 
-  // --- Submit Added Items ---
-  const handleAddItems = async () => {
-    if (selectedToAdd.length === 0) return;
-    try {
-        await api.post('/api/collections/subgroup/items', {
-            subGroupId: groupId,
-            artworkIds: selectedToAdd
+        // Post to the new endpoint
+        await api.post(`/api/collections/subgroup/${groupId}/item`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
         });
-        messageApi.success("Items added to group");
-        setIsAddModalOpen(false);
-        setSelectedToAdd([]);
-        // Refresh data
-        await fetchGroupData();
+
+        messageApi.success("Item created successfully");
+        setIsCreateModalOpen(false);
+        createForm.resetFields();
+        setFileList([]);
+        
+        await fetchGroupData(); // Refresh list
     } catch (error) {
-        handleApiError("Add Items", error);
+        handleApiError("Create Item", error);
     }
   };
 
@@ -205,8 +204,8 @@ const GroupDetail = () => {
             {/* List Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <Title level={4} style={{ margin: 0 }}>Items in this Group</Title>
-                <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-                    Link Items
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateModalOpen(true)}>
+                    Add Item
                 </Button>
             </div>
 
@@ -224,37 +223,55 @@ const GroupDetail = () => {
         </Row>
       </Content>
 
-      {/* --- Add Items Modal --- */}
+      {/* --- Create Item Modal --- */}
       <Modal 
-        title="Link Items to Group" 
-        open={isAddModalOpen} 
-        onCancel={() => setIsAddModalOpen(false)}
-        onOk={handleAddItems}
-        okText={`Add Selected (${selectedToAdd.length})`}
-        width={600}
+        title="Add New Item" 
+        open={isCreateModalOpen} 
+        onCancel={() => setIsCreateModalOpen(false)}
+        onOk={() => createForm.submit()}
+        okText="Create"
       >
-        {loadingAll ? <Spin style={{ display: 'block', margin: '20px auto' }} /> : (
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                <Checkbox.Group style={{ width: '100%' }} value={selectedToAdd} onChange={setSelectedToAdd}>
-                    <List
-                        dataSource={allArtworks}
-                        renderItem={item => (
-                            <List.Item>
-                                <Checkbox value={item.artworkId} style={{ width: '100%' }}>
-                                    <Space>
-                                        {item.imageUrl && <img src={item.imageUrl} alt="art" style={{ width: 30, height: 30, borderRadius: 2 }} />}
-                                        <Text strong>{item.title}</Text>
-                                        <Text type="secondary">({item.artistName || 'Unknown'})</Text>
-                                        {/* Optional: Show if already in a group */}
-                                        {item.subGroupId && <Text type="warning" style={{ fontSize: 10 }}>[Currently in another group]</Text>}
-                                    </Space>
-                                </Checkbox>
-                            </List.Item>
-                        )}
-                    />
-                </Checkbox.Group>
-            </div>
-        )}
+        <Form form={createForm} onFinish={handleCreateItem} layout="vertical">
+            <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Please enter a title' }]}>
+                <Input placeholder="e.g. Sunset over the Harbour" />
+            </Form.Item>
+            
+            <Form.Item name="artistName" label="Artist Name">
+                <Input placeholder="e.g. J.M.W. Turner" />
+            </Form.Item>
+
+            <Row gutter={16}>
+                <Col span={12}>
+                    <Form.Item name="yearCreated" label="Year">
+                        <InputNumber style={{ width: '100%' }} placeholder="e.g. 1920" />
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item name="medium" label="Medium">
+                        <Input placeholder="e.g. Oil on Canvas" />
+                    </Form.Item>
+                </Col>
+            </Row>
+
+            <Form.Item name="dimensions" label="Dimensions">
+                <Input placeholder="e.g. 50x40 cm" />
+            </Form.Item>
+
+            <Form.Item name="description" label="Description">
+                <TextArea rows={2} />
+            </Form.Item>
+
+            <Form.Item label="Image">
+                <Upload 
+                    beforeUpload={() => false} // Prevent auto-upload
+                    fileList={fileList}
+                    onChange={({ fileList }) => setFileList(fileList.slice(-1))} // Keep only 1 file
+                    accept="image/*"
+                >
+                    <Button icon={<UploadOutlined />}>Select Image</Button>
+                </Upload>
+            </Form.Item>
+        </Form>
       </Modal>
 
     </Layout>

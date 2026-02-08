@@ -7,6 +7,8 @@ using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using FineArtApi.Services;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 namespace FineArtApi.Controllers
 {
@@ -17,11 +19,46 @@ namespace FineArtApi.Controllers
     {
         private readonly ArtContext _context;
         private readonly IAuditService _auditService;
+        private readonly IConfiguration _configuration;
 
-        public CollectionsController(ArtContext context, IAuditService auditService)
+        public CollectionsController(ArtContext context, IAuditService auditService, IConfiguration configuration)
         {
             _context = context;
             _auditService = auditService;
+            _configuration = configuration;
+        }
+
+        // --- HELPER: Upload Image to Blob Storage ---
+        private async Task<string> UploadImageAsync(IFormFile file)
+        {
+            try
+            {
+                var connectionString = _configuration["AzureStorage:ConnectionString"];
+                
+                // Fallback for local testing if no Azure key is present
+                if (string.IsNullOrEmpty(connectionString)) 
+                {
+                    // In a real app, force the user to config Azure. 
+                    // For now, return a placeholder so it doesn't crash 500.
+                    return "https://via.placeholder.com/400x400?text=Storage+Not+Configured";
+                }
+
+                var blobServiceClient = new BlobServiceClient(connectionString);
+                var containerClient = blobServiceClient.GetBlobContainerClient("artworks");
+                await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var blobClient = containerClient.GetBlobClient(fileName);
+
+                await blobClient.UploadAsync(file.OpenReadStream(), new BlobHttpHeaders { ContentType = file.ContentType });
+
+                return blobClient.Uri.ToString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Blob Upload Failed: {ex.Message}");
+                return null; // Handle gracefully
+            }
         }
 
         private string GetFullError(Exception ex)
@@ -160,9 +197,10 @@ namespace FineArtApi.Controllers
                         a.ArtworkId,
                         a.Title,
                         ArtistName = a.Artist != null ? (a.Artist.Pseudonym ?? $"{a.Artist.FirstName} {a.Artist.LastName}") : "Unknown",
-                        ImageUrl = a.ArtworkImages != null 
-                            ? a.ArtworkImages.OrderByDescending(i => i.IsPrimary).Select(i => i.BlobUrl).FirstOrDefault()
-                            : null,
+                        ImageUrl = a.ArtworkImages
+                                .OrderByDescending(i => i.IsPrimary)
+                                .Select(i => i.BlobUrl)
+                                .FirstOrDefault(),
                          a.Medium,
                          a.YearCreated,
                          a.Dimensions
@@ -177,50 +215,94 @@ namespace FineArtApi.Controllers
             }
         }
 
-        // POST: api/collections/subgroup/items
-        // --- NEW ENDPOINT: Add Items to Group ---
-        [HttpPost("subgroup/items")]
-        public async Task<IActionResult> AddItemsToGroup([FromBody] AddItemsToGroupDto dto)
+        // --- NEW: CREATE ITEM IN GROUP (With Image & Artist Logic) ---
+        [HttpPost("subgroup/{subGroupId}/item")]
+        public async Task<IActionResult> CreateArtworkInGroup(int subGroupId, [FromForm] CreateArtworkInGroupDto dto)
         {
             try
             {
                 var profileId = GetCurrentProfileId();
                 if (profileId == null) return Unauthorized(new { message = "Identity invalid." });
 
-                // 1. Verify Ownership of Group
+                // 1. Verify Group Ownership
                 var subGroup = await _context.SubGroups
                     .Include(sg => sg.Collection)
-                    .FirstOrDefaultAsync(sg => sg.SubGroupId == dto.SubGroupId);
+                    .FirstOrDefaultAsync(sg => sg.SubGroupId == subGroupId);
 
                 if (subGroup == null) return NotFound("Group not found");
                 if (subGroup.Collection.OwnerProfileId != profileId) return Forbid();
 
-                // 2. Fetch Artworks (Only ones owned by user)
-                var artworks = await _context.Artworks
-                    .Where(a => dto.ArtworkIds.Contains(a.ArtworkId))
-                    .Where(a => a.CreatedByProfileId == profileId) // Security: Must own artwork
-                    .ToListAsync();
-
-                if (!artworks.Any()) return Ok(new { message = "No valid artworks found to add." });
-
-                // 3. Update Link
-                foreach (var art in artworks)
+                // 2. Handle Artist (Text -> ID)
+                int? artistId = null;
+                if (!string.IsNullOrWhiteSpace(dto.ArtistName))
                 {
-                    art.SubGroupId = dto.SubGroupId;
-                    art.LastModifiedAt = DateTime.UtcNow;
+                    // Simple lookup: Does this name exist?
+                    var existingArtist = await _context.Artists
+                        .FirstOrDefaultAsync(a => a.LastName == dto.ArtistName || a.Pseudonym == dto.ArtistName);
+
+                    if (existingArtist != null)
+                    {
+                        artistId = existingArtist.ArtistId;
+                    }
+                    else
+                    {
+                        // Create new artist "Just in Time"
+                        var newArtist = new Artist
+                        {
+                            LastName = dto.ArtistName, // Defaulting to LastName for single field
+                            CreatedAt = DateTime.UtcNow,
+                            LastModifiedAt = DateTime.UtcNow
+                        };
+                        _context.Artists.Add(newArtist);
+                        await _context.SaveChangesAsync();
+                        artistId = newArtist.ArtistId;
+                    }
                 }
 
-                await _context.SaveChangesAsync();
-                
-                try {
-                     await _auditService.LogAsync("SubGroups", subGroup.SubGroupId, "ADD_ITEMS", profileId.Value, null, new { Count = artworks.Count });
-                } catch { }
+                // 3. Create Artwork Record
+                var artwork = new Artwork
+                {
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    Medium = dto.Medium,
+                    Dimensions = dto.Dimensions,
+                    YearCreated = dto.YearCreated,
+                    SubGroupId = subGroupId,
+                    ArtistId = artistId,
+                    CreatedByProfileId = profileId.Value,
+                    CreatedAt = DateTime.UtcNow,
+                    LastModifiedAt = DateTime.UtcNow
+                };
 
-                return Ok(new { message = "Items added successfully", count = artworks.Count });
+                _context.Artworks.Add(artwork);
+                await _context.SaveChangesAsync();
+
+                // 4. Handle Image Upload
+                if (dto.ImageFile != null)
+                {
+                    var blobUrl = await UploadImageAsync(dto.ImageFile);
+                    if (blobUrl != null)
+                    {
+                        var image = new ArtworkImage
+                        {
+                            ArtworkId = artwork.ArtworkId,
+                            BlobUrl = blobUrl,
+                            IsPrimary = true,
+                            UploadedAt = DateTime.UtcNow,
+                            LastModifiedAt = DateTime.UtcNow
+                        };
+                        _context.ArtworkImages.Add(image);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                await _auditService.LogAsync("Artworks", artwork.ArtworkId, "INSERT_VIA_GROUP", profileId.Value, null, new { artwork.Title });
+
+                return Ok(new { message = "Item created successfully", artworkId = artwork.ArtworkId });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Add Items Failed", error = GetFullError(ex) });
+                return StatusCode(500, new { message = "Create Item Failed", error = GetFullError(ex) });
             }
         }
 
@@ -357,12 +439,18 @@ namespace FineArtApi.Controllers
         public string? Description { get; set; }
     }
 
-    // New DTO for Adding Items
-    public class AddItemsToGroupDto
+    // New DTO for Creating Item with File
+    public class CreateArtworkInGroupDto
     {
         [Required]
-        public int SubGroupId { get; set; }
+        public string Title { get; set; } = string.Empty;
         
-        public List<int> ArtworkIds { get; set; } = new List<int>();
+        public string? ArtistName { get; set; }
+        public string? Description { get; set; }
+        public string? Medium { get; set; }
+        public string? Dimensions { get; set; }
+        public int? YearCreated { get; set; }
+
+        public IFormFile? ImageFile { get; set; }
     }
 }
