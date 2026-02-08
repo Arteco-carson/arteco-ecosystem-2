@@ -20,8 +20,29 @@ const CollectionsList = () => {
   
   const { token } = theme.useToken();
   
-  // Environment variable for Portal URL (must be set in .env file)
+  // Environment variable for Portal URL
   const portalUrl = import.meta.env.VITE_PORTAL_URL || '/';
+
+  // --- HELPER: Aggressive Error Revealer ---
+  const showErrorAlert = (context, error) => {
+    console.error(context, error);
+    
+    // Extract the hidden error message from the backend
+    let serverMsg = "Unknown Error";
+    let innerMsg = "";
+    
+    if (error.response && error.response.data) {
+        // Check for our custom debug format
+        serverMsg = error.response.data.message || JSON.stringify(error.response.data);
+        innerMsg = error.response.data.error || error.response.data.inner || "";
+    } else {
+        serverMsg = error.message;
+    }
+
+    // Force the user to see it
+    alert(`⚠️ DEBUG ERROR (${context}) ⚠️\n\nServer Message: ${serverMsg}\n\nDetails: ${innerMsg}`);
+    message.error(`Error: ${serverMsg}`);
+  };
 
   // --- Data Fetching ---
   const fetchCollections = async () => {
@@ -30,12 +51,7 @@ const CollectionsList = () => {
       const response = await api.get('/api/collections');
       setCollections(response.data);
     } catch (error) {
-      console.error('Failed to load collections:', error);
-      if (error.code === "ERR_NETWORK") {
-        message.error('Cannot connect to API. Please check your network.');
-      } else {
-        message.error('Failed to load collections');
-      }
+      showErrorAlert("Loading Collections", error);
     } finally {
       setLoading(false);
     }
@@ -57,8 +73,7 @@ const CollectionsList = () => {
       form.resetFields();
       fetchCollections(); 
     } catch (error) {
-      console.error("Create Collection Failed:", error.response || error);
-      message.error(`Failed to create: ${error.response?.data?.message || error.message}`);
+      showErrorAlert("Creating Collection", error);
     }
   };
 
@@ -74,8 +89,7 @@ const CollectionsList = () => {
       form.resetFields();
       fetchCollections(); 
     } catch (error) {
-      console.error("Create Group Failed:", error);
-      message.error('Failed to create group');
+       showErrorAlert("Creating Group", error);
     }
   };
 

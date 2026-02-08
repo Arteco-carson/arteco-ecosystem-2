@@ -46,12 +46,12 @@ namespace FineArtApi.Controllers
 
                 var collections = await _context.Collections
                     .Where(c => c.OwnerProfileId == profileId)
-                    .Include(c => c.SubGroups) // <--- This will crash if SubGroups table or FK is missing
+                    .Include(c => c.SubGroups)
                     .Select(c => new {
                         c.CollectionId,
                         c.Name, 
                         c.Description,
-                        ArtworkCount = c.SubGroups.SelectMany(sg => sg.Artworks).Count(), // <--- Crash if Artworks.SubGroupId is missing
+                        ArtworkCount = c.SubGroups.SelectMany(sg => sg.Artworks).Count(),
                         SubGroupCount = c.SubGroups.Count
                     })
                     .OrderByDescending(c => c.CollectionId)
@@ -61,7 +61,6 @@ namespace FineArtApi.Controllers
             }
             catch (Exception ex)
             {
-                // DEBUG: Return the actual DB error to the frontend
                 return StatusCode(500, new { message = "Database Error", error = ex.Message, inner = ex.InnerException?.Message });
             }
         }
@@ -100,7 +99,7 @@ namespace FineArtApi.Controllers
                         {
                             a.ArtworkId,
                             a.Title,
-                            ArtistName = a.Artist != null ? $"{a.Artist.FirstName} {a.Artist.LastName}" : "Unknown",
+                            ArtistName = a.Artist != null ? (a.Artist.Pseudonym ?? $"{a.Artist.FirstName} {a.Artist.LastName}") : "Unknown",
                             ImageUrl = a.ArtworkImages
                                 .OrderByDescending(i => i.IsPrimary)
                                 .Select(i => i.BlobUrl)
@@ -121,7 +120,6 @@ namespace FineArtApi.Controllers
         [HttpPost]
         public async Task<ActionResult<object>> CreateCollection([FromBody] CollectionCreateDto dto)
         {
-            // Wrap in Try-Catch to see why it fails
             try 
             {
                 var profileId = GetCurrentProfileId();
@@ -130,23 +128,29 @@ namespace FineArtApi.Controllers
                 using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
+                    // 1. Create Collection
                     var collection = new Collection
                     {
                         Name = dto.Name,
                         Description = dto.Description,
                         OwnerProfileId = profileId.Value,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow,
+                        // FIX: Explicitly set this to prevent "0001-01-01" crashes
+                        LastModifiedAt = DateTime.UtcNow 
                     };
 
                     _context.Collections.Add(collection);
                     await _context.SaveChangesAsync();
 
+                    // 2. Create Default SubGroup
                     var defaultGroup = new SubGroup
                     {
                         Name = "-",
                         Description = "Default Group",
                         CollectionId = collection.CollectionId,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow,
+                        // FIX: Explicitly set this too
+                        LastModifiedAt = DateTime.UtcNow
                     };
 
                     _context.SubGroups.Add(defaultGroup);
@@ -174,12 +178,11 @@ namespace FineArtApi.Controllers
                 catch (Exception)
                 {
                     await transaction.RollbackAsync();
-                    throw; // Re-throw to be caught by outer block
+                    throw;
                 }
             }
             catch (Exception ex)
             {
-                // DEBUG: Return the actual error
                 return StatusCode(500, new { message = "Create Failed", error = ex.Message, inner = ex.InnerException?.Message });
             }
         }
@@ -202,7 +205,8 @@ namespace FineArtApi.Controllers
                     Name = dto.Name,
                     Description = dto.Description,
                     CollectionId = dto.CollectionId,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    LastModifiedAt = DateTime.UtcNow // FIX
                 };
 
                 _context.SubGroups.Add(subGroup);
