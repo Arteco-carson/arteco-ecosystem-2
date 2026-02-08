@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization; // Required for JsonIgnore
+using System.Text.Json.Serialization;
 
 namespace FineArtApi.Models
 {
@@ -17,6 +17,9 @@ namespace FineArtApi.Models
         [StringLength(200)]
         public string Title { get; set; } = string.Empty;
 
+        // --- FIX: Added Description (Required by Controller) ---
+        public string? Description { get; set; }
+
         public int? ArtistId { get; set; }
         
         [ForeignKey("ArtistId")]
@@ -26,10 +29,9 @@ namespace FineArtApi.Models
 
         public string? Medium { get; set; }
         
-        // --- ADDED: Missing properties required for "Add Item" feature ---
         public string? Dimensions { get; set; }
+        
         public int? YearCreated { get; set; }
-        // ---------------------------------------------------------------
 
         [Column(TypeName = "decimal(10, 2)")]
         public decimal? HeightCM { get; set; }
@@ -71,19 +73,14 @@ namespace FineArtApi.Models
 
         public DateTime? LastModifiedAt { get; set; } = DateTime.UtcNow;
 
-        // --- NEW COLLECTION HIERARCHY ---
         public int? SubGroupId { get; set; }
 
         [ForeignKey("SubGroupId")]
-        [JsonIgnore] // <--- STOPS THE INFINITE LOOP
+        [JsonIgnore]
         public virtual SubGroup? SubGroup { get; set; }
 
-        // --- NAVIGATION PROPERTIES ---
-        
         public virtual ICollection<ArtworkImage> ArtworkImages { get; set; } = new List<ArtworkImage>();
-        
         public virtual ICollection<Appraisal> Appraisals { get; set; } = new List<Appraisal>();
-
         public virtual ICollection<DefectReport> DefectReports { get; set; } = new List<DefectReport>();
     }
 }
